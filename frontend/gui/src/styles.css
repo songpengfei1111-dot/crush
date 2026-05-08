@@ -9,6 +9,39 @@ body {
   color: #e8e8e8;
 }
 
+button {
+  background: #2b6ef3;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #303540;
+}
+
+button.danger {
+  background: #a33939;
+}
+
+textarea,
+input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #151922;
+  color: #eee;
+  border: 1px solid #303540;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
 .app {
   display: grid;
   grid-template-columns: 280px 1fr;
@@ -65,39 +98,6 @@ body {
   margin-top: 8px;
 }
 
-button {
-  background: #2b6ef3;
-  color: white;
-  border: 0;
-  border-radius: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-button.secondary {
-  background: #303540;
-}
-
-button.danger {
-  background: #a33939;
-}
-
-textarea,
-input {
-  width: 100%;
-  box-sizing: border-box;
-  background: #151922;
-  color: #eee;
-  border: 1px solid #303540;
-  border-radius: 8px;
-  padding: 10px;
-}
-
-textarea {
-  min-height: 84px;
-  resize: vertical;
-}
-
 .session {
   padding: 10px;
   border-radius: 8px;
@@ -118,7 +118,7 @@ textarea {
   background: #151922;
 }
 
-.msg .role {
+.role {
   font-size: 12px;
   opacity: 0.75;
   margin-bottom: 6px;
@@ -139,16 +139,16 @@ textarea {
   margin-bottom: 8px;
 }
 
+.perm-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
 .muted {
   opacity: 0.7;
 }
 
 .spacer {
   flex: 1;
-}
-
-.perm-actions {
-  margin-top: 8px;
-  display: flex;
-  gap: 8px;
 }

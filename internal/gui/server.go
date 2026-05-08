@@ -24,7 +24,7 @@ func NewServer(controller *Controller) *Server {
 	s := &Server{controller: controller}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", s.handleIndex)
-	mux.Handle("GET /assets/", http.StripPrefix("/assets/", s.staticHandler()))
+	mux.Handle("GET /assets/", s.staticHandler())
 	mux.HandleFunc("GET /api/bootstrap", s.handleBootstrap)
 	mux.HandleFunc("POST /api/sessions", s.handleCreateSession)
 	mux.HandleFunc("GET /api/sessions/{sid}/messages", s.handleListMessages)
@@ -57,7 +57,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, _ *http.Request) {
-	index, err := frontendgui.Assets.ReadFile("index.html")
+	index, err := frontendgui.Assets.ReadFile("dist/index.html")
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
@@ -199,7 +199,7 @@ func writeError(w http.ResponseWriter, err error, status int) {
 }
 
 func (s *Server) staticHandler() http.Handler {
-	sub, err := fs.Sub(frontendgui.Assets, ".")
+	sub, err := fs.Sub(frontendgui.Assets, "dist")
 	if err != nil {
 		panic(err)
 	}

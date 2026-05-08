@@ -2,7 +2,7 @@ package frontendgui
 
 import "embed"
 
-// Assets contains the minimal GUI frontend resources.
+// Assets contains the built GUI frontend resources.
 //
-//go:embed index.html styles.css app.js
+//go:embed dist dist/**
 var Assets embed.FS
