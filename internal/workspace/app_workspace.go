@@ -12,11 +12,13 @@ import (
 	"github.com/charmbracelet/crush/internal/app"
 	"github.com/charmbracelet/crush/internal/commands"
 	"github.com/charmbracelet/crush/internal/config"
+	"github.com/charmbracelet/crush/internal/eventpayload"
 	"github.com/charmbracelet/crush/internal/history"
 	"github.com/charmbracelet/crush/internal/lsp"
 	"github.com/charmbracelet/crush/internal/message"
 	"github.com/charmbracelet/crush/internal/oauth"
 	"github.com/charmbracelet/crush/internal/permission"
+	"github.com/charmbracelet/crush/internal/pubsub"
 	"github.com/charmbracelet/crush/internal/session"
 )
 
@@ -366,6 +368,36 @@ func (w *AppWorkspace) DisableDockerMCP() error {
 }
 
 // -- Lifecycle --
+
+func (w *AppWorkspace) SubscribeEvents(ctx context.Context) (<-chan pubsub.Payload, error) {
+	rawEvents := w.app.Events(ctx)
+	out := make(chan pubsub.Payload, 100)
+
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case ev, ok := <-rawEvents:
+				if !ok {
+					return
+				}
+				payload := eventpayload.WrapDomainEvent(ev.Payload)
+				if payload == nil {
+					continue
+				}
+				select {
+				case out <- *payload:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+
+	return out, nil
+}
 
 func (w *AppWorkspace) Subscribe(program *tea.Program) {
 	w.app.Subscribe(program)

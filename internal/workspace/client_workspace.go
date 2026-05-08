@@ -13,6 +13,7 @@ import (
 	"github.com/charmbracelet/crush/internal/agent/tools/mcp"
 	"github.com/charmbracelet/crush/internal/client"
 	"github.com/charmbracelet/crush/internal/config"
+	"github.com/charmbracelet/crush/internal/eventpayload"
 	"github.com/charmbracelet/crush/internal/history"
 	"github.com/charmbracelet/crush/internal/log"
 	"github.com/charmbracelet/crush/internal/lsp"
@@ -538,6 +539,39 @@ func (w *ClientWorkspace) DisableDockerMCP() error {
 }
 
 // -- Lifecycle --
+
+func (w *ClientWorkspace) SubscribeEvents(ctx context.Context) (<-chan pubsub.Payload, error) {
+	evc, err := w.client.SubscribeEvents(ctx, w.workspaceID())
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(chan pubsub.Payload, 100)
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case ev, ok := <-evc:
+				if !ok {
+					return
+				}
+				payload := eventpayload.WrapProtoEvent(ev)
+				if payload == nil {
+					continue
+				}
+				select {
+				case out <- *payload:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+
+	return out, nil
+}
 
 func (w *ClientWorkspace) Subscribe(program *tea.Program) {
 	defer log.RecoverPanic("ClientWorkspace.Subscribe", func() {

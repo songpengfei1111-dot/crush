@@ -17,6 +17,7 @@ import (
 	"github.com/charmbracelet/crush/internal/message"
 	"github.com/charmbracelet/crush/internal/oauth"
 	"github.com/charmbracelet/crush/internal/permission"
+	"github.com/charmbracelet/crush/internal/pubsub"
 	"github.com/charmbracelet/crush/internal/session"
 )
 
@@ -139,6 +140,7 @@ type Workspace interface {
 	DisableDockerMCP() error
 
 	// Events
+	SubscribeEvents(ctx context.Context) (<-chan pubsub.Payload, error)
 	Subscribe(program *tea.Program)
 	Shutdown()
 }
