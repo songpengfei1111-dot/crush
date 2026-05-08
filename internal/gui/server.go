@@ -32,6 +32,7 @@ func NewServer(controller *Controller) *Server {
 	mux.HandleFunc("GET /api/sessions/{sid}/messages", s.handleListMessages)
 	mux.HandleFunc("POST /api/sessions/{sid}/messages", s.handleSendMessage)
 	mux.HandleFunc("POST /api/sessions/{sid}/messages/{mid}/revoke", s.handleRevokeRound)
+	mux.HandleFunc("POST /api/sessions/{sid}/fork", s.handleForkRound)
 	mux.HandleFunc("POST /api/sessions/{sid}/cancel", s.handleCancel)
 	mux.HandleFunc("GET /api/sessions/{sid}/queue", s.handleQueueInfo)
 	mux.HandleFunc("POST /api/sessions/{sid}/queue/clear", s.handleClearQueue)
@@ -151,6 +152,23 @@ func (s *Server) handleRevokeRound(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleForkRound(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		RoundEndMessageID string `json:"round_end_message_id"`
+		Title             string `json:"title"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	sess, err := s.controller.ForkRound(r.Context(), r.PathValue("sid"), req.RoundEndMessageID, req.Title)
+	if err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, sess)
 }
 
 func (s *Server) handleCancel(w http.ResponseWriter, r *http.Request) {

@@ -18,11 +18,12 @@ type MessagesPaneProps = {
   messages: Message[];
   sessionID: string;
   isBusy: boolean;
+  onForkRound: (messageID: string) => void;
   onRevokeRound: (messageID: string) => void;
 };
 
 export function MessagesPane(props: MessagesPaneProps) {
-  const { messages, sessionID, isBusy, onRevokeRound } = props;
+  const { messages, sessionID, isBusy, onForkRound, onRevokeRound } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const previousMessageCountRef = useRef(0);
   const copyResetTimerRef = useRef<number | null>(null);
@@ -156,6 +157,7 @@ export function MessagesPane(props: MessagesPaneProps) {
             copied={copiedMessageID === message.id}
             canRevoke={message.role === "user" && !isBusy && message.id === latestUserMessageID}
             onCopyRawText={(value) => void handleCopyMessage(message.id, value)}
+            onForkRound={() => onForkRound(message.id)}
             onRevokeRound={() => onRevokeRound(message.id)}
             thinkingExpanded={expandedThinking[message.id]}
             onToggleThinking={(nextOpen) => toggleThinking(message.id, nextOpen)}
@@ -198,6 +200,7 @@ type MessageCardProps = {
   copied: boolean;
   canRevoke: boolean;
   onCopyRawText: (value: string) => void;
+  onForkRound: () => void;
   onRevokeRound: () => void;
   thinkingExpanded?: boolean;
   onToggleThinking: (nextOpen: boolean) => void;
@@ -214,6 +217,7 @@ function MessageCard(props: MessageCardProps) {
     copied,
     canRevoke,
     onCopyRawText,
+    onForkRound,
     onRevokeRound,
     thinkingExpanded,
     onToggleThinking,
@@ -235,6 +239,7 @@ function MessageCard(props: MessageCardProps) {
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
   const isTool = message.role === "tool";
+  const canFork = isAssistant && Boolean(finish && finish.reason !== "tool_use");
 
   if (isUser) {
     return (
@@ -297,11 +302,18 @@ function MessageCard(props: MessageCardProps) {
           />
         ) : null}
 
-        {isAssistant && text ? (
+        {isAssistant && (text || canFork) ? (
           <div className="message-toolbar">
-            <button className="message-toolbar-button secondary" onClick={() => onCopyRawText(text)}>
-              {copied ? "Copied" : "Copy"}
-            </button>
+            {text ? (
+              <button className="message-toolbar-button secondary" onClick={() => onCopyRawText(text)}>
+                {copied ? "Copied" : "Copy"}
+              </button>
+            ) : null}
+            {canFork ? (
+              <button className="message-toolbar-button secondary" onClick={onForkRound}>
+                Fork
+              </button>
+            ) : null}
           </div>
         ) : null}
 

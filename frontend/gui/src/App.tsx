@@ -12,6 +12,7 @@ export default function App() {
     <div className="app">
       <SessionsPane
         sessions={state.sessions}
+        branchMetaBySessionID={state.branchMetaBySessionID}
         currentSessionID={state.currentSessionID}
         busySessionID={state.busySessionID}
         onCreateSession={() => void actions.createNewSession()}
@@ -29,6 +30,7 @@ export default function App() {
           messages={currentMessages}
           sessionID={state.currentSessionID}
           isBusy={state.agent.is_busy}
+          onForkRound={(messageID) => void actions.forkSessionFromRoundEnd(messageID)}
           onRevokeRound={(messageID) => void actions.revokeRoundByMessageID(messageID)}
         />
         <Composer

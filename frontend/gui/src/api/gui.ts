@@ -31,6 +31,17 @@ export function revokeRound(sessionID: string, messageID: string): Promise<void>
   );
 }
 
+export function forkSession(sessionID: string, roundEndMessageID: string, title?: string): Promise<Session> {
+  return requestJSON<Session>(`/api/sessions/${encodeURIComponent(sessionID)}/fork`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      round_end_message_id: roundEndMessageID,
+      title,
+    }),
+  });
+}
+
 export function createSession(title: string): Promise<Session> {
   return requestJSON<Session>("/api/sessions", {
     method: "POST",

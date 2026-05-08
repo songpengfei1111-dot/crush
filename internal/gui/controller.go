@@ -124,6 +124,65 @@ func (c *Controller) SendMessage(ctx context.Context, sessionID, prompt string) 
 	return c.ws.AgentRun(ctx, sessionID, prompt)
 }
 
+func (c *Controller) ForkRound(ctx context.Context, sessionID, roundEndMessageID, title string) (proto.Session, error) {
+	appWS, err := c.localAppWorkspace()
+	if err != nil {
+		return proto.Session{}, err
+	}
+	if c.isSessionBusy(sessionID) {
+		return proto.Session{}, fmt.Errorf("cannot fork while the session is busy")
+	}
+
+	msgs, err := c.ws.ListMessages(ctx, sessionID)
+	if err != nil {
+		return proto.Session{}, err
+	}
+
+	targetIndex := -1
+	for i, msg := range msgs {
+		if msg.ID == roundEndMessageID {
+			targetIndex = i
+			break
+		}
+	}
+	if targetIndex == -1 {
+		return proto.Session{}, fmt.Errorf("message not found: %s", roundEndMessageID)
+	}
+
+	target := msgs[targetIndex]
+	if !isForkRoundEndMessage(target) {
+		return proto.Session{}, fmt.Errorf("fork is only available from a completed assistant round")
+	}
+
+	sourceSession, err := c.ws.GetSession(ctx, sessionID)
+	if err != nil {
+		return proto.Session{}, err
+	}
+	if title == "" {
+		title = forkSessionTitle(sourceSession.Title)
+	}
+
+	forkedSession, err := c.ws.CreateSession(ctx, title)
+	if err != nil {
+		return proto.Session{}, err
+	}
+
+	for i := 0; i <= targetIndex; i++ {
+		params := cloneMessageCreateParams(msgs[i])
+		if _, createErr := appWS.App().Messages.Create(ctx, forkedSession.ID, params); createErr != nil {
+			_ = c.ws.DeleteSession(ctx, forkedSession.ID)
+			return proto.Session{}, createErr
+		}
+	}
+
+	forkedSession, err = c.ws.GetSession(ctx, forkedSession.ID)
+	if err != nil {
+		return proto.Session{}, err
+	}
+
+	return eventpayload.SessionFromDomain(forkedSession), nil
+}
+
 func (c *Controller) RevokeRound(ctx context.Context, sessionID, messageID string) error {
 	msgs, err := c.ws.ListMessages(ctx, sessionID)
 	if err != nil {
@@ -238,6 +297,56 @@ func (c *Controller) agentInfo() proto.AgentInfo {
 		IsReady:  c.ws.AgentIsReady(),
 		Model:    model.CatwalkCfg,
 		ModelCfg: model.ModelCfg,
+	}
+}
+
+func (c *Controller) localAppWorkspace() (*workspace.AppWorkspace, error) {
+	appWS, ok := c.ws.(*workspace.AppWorkspace)
+	if !ok {
+		return nil, fmt.Errorf("fork is only available in local GUI mode")
+	}
+	return appWS, nil
+}
+
+func (c *Controller) isSessionBusy(sessionID string) bool {
+	return c.ws.AgentIsSessionBusy(sessionID)
+}
+
+func isForkRoundEndMessage(msg message.Message) bool {
+	if msg.Role != message.Assistant {
+		return false
+	}
+	finish := msg.FinishPart()
+	if finish == nil {
+		return false
+	}
+	return finish.Reason != message.FinishReasonToolUse
+}
+
+func forkSessionTitle(title string) string {
+	if title == "" {
+		title = defaultSessionTitle
+	}
+	return title + " / fork"
+}
+
+func cloneMessageCreateParams(msg message.Message) message.CreateMessageParams {
+	parts := make([]message.ContentPart, 0, len(msg.Parts))
+	for _, part := range msg.Parts {
+		if msg.Role != message.Assistant {
+			if _, ok := part.(message.Finish); ok {
+				continue
+			}
+		}
+		parts = append(parts, part)
+	}
+
+	return message.CreateMessageParams{
+		Role:             msg.Role,
+		Parts:            parts,
+		Model:            msg.Model,
+		Provider:         msg.Provider,
+		IsSummaryMessage: msg.IsSummaryMessage,
 	}
 }
 

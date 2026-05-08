@@ -4,6 +4,12 @@
   gap: 10px;
 }
 
+.session-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .session {
   padding: 12px;
   border-radius: 14px;
@@ -16,6 +22,16 @@
 .session.active {
   border-color: #2b6ef3;
   box-shadow: 0 0 0 1px rgba(43, 110, 243, 0.18);
+}
+
+.branch-session {
+  border-style: dashed;
+}
+
+.session-children {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .session-title-row {
@@ -113,4 +129,9 @@
 .session-badge.running {
   background: rgba(43, 110, 243, 0.18);
   color: #9fc1ff;
+}
+
+.session-badge.branch {
+  background: rgba(122, 92, 255, 0.18);
+  color: #cab8ff;
 }

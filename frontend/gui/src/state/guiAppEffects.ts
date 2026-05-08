@@ -4,6 +4,7 @@ import {
   createSession,
   deleteSession,
   denyPermission,
+  forkSession,
   getBootstrap,
   getMessages,
   openEventStream,
@@ -51,6 +52,10 @@ export function submitPrompt(sessionID: string, prompt: string): Promise<void> {
 
 export function revokeGuiRound(sessionID: string, messageID: string): Promise<void> {
   return revokeRound(sessionID, messageID);
+}
+
+export function forkGuiSession(sessionID: string, roundEndMessageID: string, title?: string): Promise<Session> {
+  return forkSession(sessionID, roundEndMessageID, title);
 }
 
 export function createGuiSession(title: string): Promise<Session> {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { AppState, PermissionRequest } from "../shared/types";
+import type { AppState, BranchMeta, PermissionRequest } from "../shared/types";
 import {
   allowGuiPermission,
   bootstrapGuiApp,
@@ -8,6 +8,7 @@ import {
   createGuiSession,
   deleteGuiSession,
   denyGuiPermission,
+  forkGuiSession,
   loadSessionMessages,
   revokeGuiRound,
   renameGuiSession,
@@ -22,6 +23,7 @@ import {
   reduceEvent,
   sortSessions,
 } from "../state/guiAppReducer";
+import { upsertById } from "../utils/collections";
 
 export function useGuiApp() {
   const [state, setState] = useState<AppState>(initialAppState);
@@ -140,6 +142,17 @@ export function useGuiApp() {
     await summarizeGuiSession(sessionID);
   }, []);
 
+  const forkSession = useCallback(
+    async (title?: string) => {
+      if (!state.currentSessionID || !state.messages.length) {
+        return;
+      }
+      const lastMessage = state.messages[state.messages.length - 1];
+      await forkGuiSession(state.currentSessionID, lastMessage.id, title);
+    },
+    [state.currentSessionID, state.messages],
+  );
+
   const allowCurrentPermission = useCallback(async (permission: PermissionRequest, persistent: boolean) => {
     await allowGuiPermission(permission, persistent);
   }, []);
@@ -158,6 +171,38 @@ export function useGuiApp() {
     [state.currentSessionID],
   );
 
+  const forkSessionFromRoundEnd = useCallback(
+    async (roundEndMessageID: string, title?: string) => {
+      if (!state.currentSessionID || !roundEndMessageID) {
+        return;
+      }
+      const sourceSessionID = state.currentSessionID;
+      const forkedSession = await forkGuiSession(sourceSessionID, roundEndMessageID, title);
+      const messages = await loadSessionMessages(forkedSession.id);
+      setState((prev) => {
+        const parentMeta = prev.branchMetaBySessionID[sourceSessionID];
+        const branchMeta: BranchMeta = {
+          sessionID: forkedSession.id,
+          parentSessionID: sourceSessionID,
+          roundEndMessageID,
+          rootSessionID: parentMeta?.rootSessionID || sourceSessionID,
+          createdAt: Math.floor(Date.now() / 1000),
+        };
+        return {
+          ...prev,
+          sessions: sortSessions(upsertById(prev.sessions, forkedSession)),
+          currentSessionID: forkedSession.id,
+          messages,
+          branchMetaBySessionID: {
+            ...prev.branchMetaBySessionID,
+            [forkedSession.id]: branchMeta,
+          },
+        };
+      });
+    },
+    [state.currentSessionID],
+  );
+
   return {
     state,
     currentSession,
@@ -171,6 +216,8 @@ export function useGuiApp() {
       renameExistingSession,
       deleteExistingSession,
       summarizeSessionByID,
+      forkSession,
+      forkSessionFromRoundEnd,
       allowCurrentPermission,
       denyCurrentPermission,
       revokeRoundByMessageID,
