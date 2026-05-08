@@ -144,7 +144,7 @@ function MessageCard(props: MessageCardProps) {
             onToggle={(event) => onToggleThinking((event.currentTarget as HTMLDetailsElement).open)}
           >
             <summary>
-              {reasoningFinished ? "已折叠思考过程" : "思考中..."}
+              {reasoningFinished ? "Thought" : "thinking..."}
             </summary>
             <pre>{thinking}</pre>
           </details>
@@ -154,9 +154,9 @@ function MessageCard(props: MessageCardProps) {
 
         {toolCalls > 0 || toolResults > 0 ? (
           <div className="message-meta muted">
-            {toolCalls > 0 ? `工具调用 ${toolCalls}` : ""}
+            {toolCalls > 0 ? `tool Use ${toolCalls}` : ""}
             {toolCalls > 0 && toolResults > 0 ? " · " : ""}
-            {toolResults > 0 ? `工具结果 ${toolResults}` : ""}
+            {toolResults > 0 ? `tool Result ${toolResults}` : ""}
           </div>
         ) : null}
 
