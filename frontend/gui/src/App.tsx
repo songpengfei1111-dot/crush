@@ -25,7 +25,12 @@ export default function App() {
           title={currentSession ? currentSession.title : "Crush GUI"}
           isBusy={state.agent.is_busy}
         />
-        <MessagesPane messages={currentMessages} sessionID={state.currentSessionID} />
+        <MessagesPane
+          messages={currentMessages}
+          sessionID={state.currentSessionID}
+          isBusy={state.agent.is_busy}
+          onRevokeRound={(messageID) => void actions.revokeRoundByMessageID(messageID)}
+        />
         <Composer
           onSend={actions.sendPrompt}
           onRefresh={actions.refreshMessages}

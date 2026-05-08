@@ -31,6 +31,7 @@ func NewServer(controller *Controller) *Server {
 	mux.HandleFunc("DELETE /api/sessions/{sid}", s.handleDeleteSession)
 	mux.HandleFunc("GET /api/sessions/{sid}/messages", s.handleListMessages)
 	mux.HandleFunc("POST /api/sessions/{sid}/messages", s.handleSendMessage)
+	mux.HandleFunc("POST /api/sessions/{sid}/messages/{mid}/revoke", s.handleRevokeRound)
 	mux.HandleFunc("POST /api/sessions/{sid}/cancel", s.handleCancel)
 	mux.HandleFunc("GET /api/sessions/{sid}/queue", s.handleQueueInfo)
 	mux.HandleFunc("POST /api/sessions/{sid}/queue/clear", s.handleClearQueue)
@@ -142,6 +143,14 @@ func (s *Server) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (s *Server) handleRevokeRound(w http.ResponseWriter, r *http.Request) {
+	if err := s.controller.RevokeRound(r.Context(), r.PathValue("sid"), r.PathValue("mid")); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) handleCancel(w http.ResponseWriter, r *http.Request) {

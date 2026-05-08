@@ -44,6 +44,21 @@
   justify-content: flex-end;
 }
 
+.user-message-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: min(860px, 78%);
+}
+
+.user-message-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
 .msg-row.assistant {
   justify-content: center;
 }
@@ -52,6 +67,7 @@
   background: linear-gradient(180deg, #2b3345 0%, #222a39 100%);
   border-color: #3a465f;
   margin-left: auto;
+  max-width: 100%;
 }
 
 .assistant-bubble {
@@ -110,8 +126,33 @@
   font-size: 12px;
 }
 
+.message-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.message-toolbar-user {
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
+.message-toolbar-button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .message-markdown {
   color: inherit;
+}
+
+.external-role {
+  margin-bottom: 0;
+  opacity: 0.68;
+  letter-spacing: 0.04em;
 }
 
 .message-markdown > :first-child {
@@ -176,19 +217,6 @@
   border-bottom: 0;
 }
 
-.message-markdown-pre {
-  overflow: auto;
-  padding: 12px;
-  border-radius: 10px;
-  background: #11161d;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.message-markdown-pre code {
-  white-space: pre;
-  word-break: normal;
-}
-
 .message-markdown-inline-code {
   padding: 0.1em 0.35em;
   border-radius: 6px;
@@ -196,21 +224,99 @@
   font-size: 0.95em;
 }
 
-.mermaid-block {
+.message-card {
   margin: 0 0 12px;
-  padding: 12px;
-  border-radius: 10px;
-  background: #11161d;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #121823 0%, #0e141d 100%);
+  border: 1px solid rgba(146, 176, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   overflow: auto;
 }
 
-.mermaid-block.is-loading {
-  color: #b9c4d8;
+.message-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
 }
 
-.mermaid-block.is-error {
-  border-color: rgba(255, 120, 120, 0.25);
+.message-card-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(140, 180, 255, 0.1);
+  color: #cfe0ff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+.message-card-button {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #dbe7ff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.message-card-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.code-block-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: stretch;
+  min-width: max-content;
+}
+
+.code-block-gutter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  padding: 14px 10px 14px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(199, 213, 234, 0.45);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  user-select: none;
+}
+
+.code-block-pre {
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+}
+
+.code-block-pre code {
+  display: block;
+  white-space: pre;
+  word-break: normal;
+  color: #e6eefc;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.mermaid-block-body {
+  padding: 14px;
+}
+
+.mermaid-block-status {
+  color: #b9c4d8;
+  font-size: 13px;
 }
 
 .mermaid-block-title {
@@ -220,13 +326,41 @@
   font-weight: 600;
 }
 
+.mermaid-block-error-panel {
+  border: 1px solid rgba(255, 120, 120, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 120, 120, 0.04);
+  padding: 12px;
+}
+
 .mermaid-block-error {
   margin-bottom: 10px;
   color: #ffb4b4;
   font-size: 12px;
 }
 
+.mermaid-block-source {
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 10px;
+  background: rgba(10, 14, 22, 0.75);
+}
+
+.mermaid-block-source code {
+  display: block;
+  white-space: pre;
+  word-break: normal;
+  color: #e6eefc;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .mermaid-block-canvas {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   min-width: fit-content;
 }
 

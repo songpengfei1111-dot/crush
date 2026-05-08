@@ -8,6 +8,7 @@ import {
   getMessages,
   openEventStream,
   postMessage,
+  revokeRound,
   renameSession,
   summarizeSession,
 } from "../api/gui";
@@ -46,6 +47,10 @@ export function loadSessionMessages(sessionID: string): Promise<Message[]> {
 
 export function submitPrompt(sessionID: string, prompt: string): Promise<void> {
   return postMessage(sessionID, prompt);
+}
+
+export function revokeGuiRound(sessionID: string, messageID: string): Promise<void> {
+  return revokeRound(sessionID, messageID);
 }
 
 export function createGuiSession(title: string): Promise<Session> {

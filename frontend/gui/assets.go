@@ -4,5 +4,5 @@ import "embed"
 
 // Assets contains the built GUI frontend resources.
 //
-//go:embed dist dist/**
+//go:embed all:dist all:dist/**
 var Assets embed.FS

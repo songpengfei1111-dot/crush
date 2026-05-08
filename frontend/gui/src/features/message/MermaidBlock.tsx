@@ -2,6 +2,8 @@ import { useEffect, useId, useState } from "react";
 
 import mermaid from "mermaid";
 
+import { copyTextToClipboard } from "../../utils/clipboard";
+
 type MermaidBlockProps = {
   chart: string;
   className?: string;
@@ -37,6 +39,7 @@ export function MermaidBlock(props: MermaidBlockProps) {
     svg: "",
     error: "",
   });
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const source = chart.trim();
@@ -59,7 +62,7 @@ export function MermaidBlock(props: MermaidBlockProps) {
       });
 
       try {
-        ensureMermaidInitialized()
+        ensureMermaidInitialized();
         const renderID = `mermaid-${reactID.replace(/:/g, "-")}`;
         const { svg } = await mermaid.render(renderID, source);
         if (disposed) {
@@ -89,27 +92,56 @@ export function MermaidBlock(props: MermaidBlockProps) {
     };
   }, [chart, reactID]);
 
-  const classes = ["mermaid-block", className].filter(Boolean).join(" ");
+  useEffect(() => {
+    if (!copied) {
+      return;
+    }
 
-  if (state.status === "loading" || state.status === "idle") {
-    return <div className={`${classes} is-loading`}>Rendering Mermaid diagram...</div>;
+    const timerID = window.setTimeout(() => {
+      setCopied(false);
+    }, 1500);
+
+    return () => {
+      window.clearTimeout(timerID);
+    };
+  }, [copied]);
+
+  async function handleCopy() {
+    if (!chart.trim()) {
+      return;
+    }
+
+    await copyTextToClipboard(chart);
+    setCopied(true);
   }
 
-  if (state.status === "error") {
-    return (
-      <div className={`${classes} is-error`}>
-        <div className="mermaid-block-title">Mermaid render failed</div>
-        <div className="mermaid-block-error">{state.error}</div>
-        <pre className="message-markdown-pre">
-          <code>{chart}</code>
-        </pre>
-      </div>
-    );
-  }
+  const classes = ["message-card", "mermaid-block", className].filter(Boolean).join(" ");
 
   return (
     <div className={classes}>
-      <div className="mermaid-block-canvas" dangerouslySetInnerHTML={{ __html: state.svg }} />
+      <div className="message-card-header">
+        <div className="message-card-label">mermaid</div>
+        <button className="message-card-button" onClick={() => void handleCopy()}>
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <div className="mermaid-block-body">
+        {state.status === "loading" || state.status === "idle" ? (
+          <div className="mermaid-block-status">Rendering Mermaid diagram...</div>
+        ) : null}
+        {state.status === "error" ? (
+          <div className="mermaid-block-error-panel">
+            <div className="mermaid-block-title">Mermaid render failed</div>
+            <div className="mermaid-block-error">{state.error}</div>
+            <pre className="mermaid-block-source">
+              <code>{chart}</code>
+            </pre>
+          </div>
+        ) : null}
+        {state.status === "success" ? (
+          <div className="mermaid-block-canvas" dangerouslySetInnerHTML={{ __html: state.svg }} />
+        ) : null}
+      </div>
     </div>
   );
 }

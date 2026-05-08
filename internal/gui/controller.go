@@ -124,6 +124,55 @@ func (c *Controller) SendMessage(ctx context.Context, sessionID, prompt string) 
 	return c.ws.AgentRun(ctx, sessionID, prompt)
 }
 
+func (c *Controller) RevokeRound(ctx context.Context, sessionID, messageID string) error {
+	msgs, err := c.ws.ListMessages(ctx, sessionID)
+	if err != nil {
+		return err
+	}
+
+	targetIndex := -1
+	for i, msg := range msgs {
+		if msg.ID == messageID {
+			targetIndex = i
+			break
+		}
+	}
+	if targetIndex == -1 {
+		return fmt.Errorf("message not found: %s", messageID)
+	}
+
+	target := msgs[targetIndex]
+	if target.Role != message.User {
+		return fmt.Errorf("only user messages can be revoked")
+	}
+
+	lastUserIndex := -1
+	for i := len(msgs) - 1; i >= 0; i-- {
+		if msgs[i].Role == message.User {
+			lastUserIndex = i
+			break
+		}
+	}
+	if lastUserIndex == -1 || lastUserIndex != targetIndex {
+		return fmt.Errorf("only the latest user message can be revoked")
+	}
+
+	appWS, ok := c.ws.(*workspace.AppWorkspace)
+	if !ok {
+		return fmt.Errorf("round revoke is only available in local GUI mode")
+	}
+	if appWS.App().AgentCoordinator != nil && appWS.App().AgentCoordinator.IsSessionBusy(sessionID) {
+		return fmt.Errorf("cannot revoke while the session is busy")
+	}
+
+	for i := len(msgs) - 1; i >= targetIndex; i-- {
+		if err := appWS.App().Messages.Delete(ctx, msgs[i].ID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Controller) Cancel(sessionID string) {
 	c.ws.AgentCancel(sessionID)
 }

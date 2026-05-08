@@ -9,6 +9,7 @@ import {
   deleteGuiSession,
   denyGuiPermission,
   loadSessionMessages,
+  revokeGuiRound,
   renameGuiSession,
   subscribeGuiEvents,
   submitPrompt,
@@ -147,6 +148,16 @@ export function useGuiApp() {
     await denyGuiPermission(permission);
   }, []);
 
+  const revokeRoundByMessageID = useCallback(
+    async (messageID: string) => {
+      if (!state.currentSessionID || !messageID) {
+        return;
+      }
+      await revokeGuiRound(state.currentSessionID, messageID);
+    },
+    [state.currentSessionID],
+  );
+
   return {
     state,
     currentSession,
@@ -162,6 +173,7 @@ export function useGuiApp() {
       summarizeSessionByID,
       allowCurrentPermission,
       denyCurrentPermission,
+      revokeRoundByMessageID,
     },
   };
 }

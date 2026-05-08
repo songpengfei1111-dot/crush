@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MessageMarkdown } from "../features/message/MessageMarkdown";
 import type { Message } from "../shared/types";
+import { copyTextToClipboard } from "../utils/clipboard";
 import {
   finishPart,
   firstText,
@@ -14,15 +15,19 @@ import {
 type MessagesPaneProps = {
   messages: Message[];
   sessionID: string;
+  isBusy: boolean;
+  onRevokeRound: (messageID: string) => void;
 };
 
 export function MessagesPane(props: MessagesPaneProps) {
-  const { messages, sessionID } = props;
+  const { messages, sessionID, isBusy, onRevokeRound } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const previousMessageCountRef = useRef(0);
+  const copyResetTimerRef = useRef<number | null>(null);
   const [stickToBottom, setStickToBottom] = useState(true);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [expandedThinking, setExpandedThinking] = useState<Record<string, boolean>>({});
+  const [copiedMessageID, setCopiedMessageID] = useState("");
 
   function scrollToBottom() {
     const container = containerRef.current;
@@ -51,7 +56,16 @@ export function MessagesPane(props: MessagesPaneProps) {
     setStickToBottom(true);
     setShowJumpToLatest(false);
     setExpandedThinking({});
+    setCopiedMessageID("");
   }, [sessionID]);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current !== null) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const receivedNewMessages = messages.length > previousMessageCountRef.current;
@@ -74,6 +88,31 @@ export function MessagesPane(props: MessagesPaneProps) {
     }));
   }
 
+  const latestUserMessageID = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].role === "user") {
+        return messages[i].id;
+      }
+    }
+    return "";
+  }, [messages]);
+
+  async function handleCopyMessage(messageID: string, value: string) {
+    if (!value.trim()) {
+      return;
+    }
+
+    await copyTextToClipboard(value);
+    setCopiedMessageID(messageID);
+    if (copyResetTimerRef.current !== null) {
+      window.clearTimeout(copyResetTimerRef.current);
+    }
+    copyResetTimerRef.current = window.setTimeout(() => {
+      setCopiedMessageID((current) => (current === messageID ? "" : current));
+      copyResetTimerRef.current = null;
+    }, 1500);
+  }
+
   return (
     <div className="messages-wrap">
       <div ref={containerRef} className="messages" onScroll={handleScroll}>
@@ -81,6 +120,10 @@ export function MessagesPane(props: MessagesPaneProps) {
           <MessageCard
             key={message.id}
             message={message}
+            copied={copiedMessageID === message.id}
+            canRevoke={message.role === "user" && !isBusy && message.id === latestUserMessageID}
+            onCopyRawText={(value) => void handleCopyMessage(message.id, value)}
+            onRevokeRound={() => onRevokeRound(message.id)}
             thinkingExpanded={expandedThinking[message.id]}
             onToggleThinking={(nextOpen) => toggleThinking(message.id, nextOpen)}
           />
@@ -104,12 +147,16 @@ export function MessagesPane(props: MessagesPaneProps) {
 
 type MessageCardProps = {
   message: Message;
+  copied: boolean;
+  canRevoke: boolean;
+  onCopyRawText: (value: string) => void;
+  onRevokeRound: () => void;
   thinkingExpanded?: boolean;
   onToggleThinking: (nextOpen: boolean) => void;
 };
 
 function MessageCard(props: MessageCardProps) {
-  const { message, thinkingExpanded, onToggleThinking } = props;
+  const { message, copied, canRevoke, onCopyRawText, onRevokeRound, thinkingExpanded, onToggleThinking } = props;
   const text = useMemo(() => firstText(message.parts), [message.parts]);
   const thinking = useMemo(() => reasoningText(message.parts), [message.parts]);
   const finish = useMemo(() => finishPart(message.parts), [message.parts]);
@@ -123,6 +170,33 @@ function MessageCard(props: MessageCardProps) {
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
   const isTool = message.role === "tool";
+
+  if (isUser) {
+    return (
+      <div className="msg-row user">
+        <div className="user-message-stack">
+          <div className="user-message-meta">
+            <div className="role external-role">USER</div>
+          </div>
+          <div className="msg user-bubble">
+            {text ? <MessageMarkdown content={text} className="user-markdown" /> : null}
+          </div>
+          {text ? (
+            <div className="message-toolbar message-toolbar-user">
+              <button className="message-toolbar-button secondary" onClick={() => onCopyRawText(text)}>
+                {copied ? "Copied" : "Copy"}
+              </button>
+              {canRevoke ? (
+                <button className="message-toolbar-button secondary" onClick={onRevokeRound}>
+                  撤回
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`msg-row${isUser ? " user" : isAssistant ? " assistant" : ""}`}>
@@ -156,6 +230,14 @@ function MessageCard(props: MessageCardProps) {
             content={text}
             className={isAssistant ? "assistant-markdown" : isUser ? "user-markdown" : undefined}
           />
+        ) : null}
+
+        {isAssistant && text ? (
+          <div className="message-toolbar">
+            <button className="message-toolbar-button secondary" onClick={() => onCopyRawText(text)}>
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
         ) : null}
 
         {toolCalls > 0 || toolResults > 0 ? (

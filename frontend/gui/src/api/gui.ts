@@ -22,6 +22,15 @@ export function postMessage(sessionID: string, prompt: string): Promise<void> {
   });
 }
 
+export function revokeRound(sessionID: string, messageID: string): Promise<void> {
+  return requestJSON<void>(
+    `/api/sessions/${encodeURIComponent(sessionID)}/messages/${encodeURIComponent(messageID)}/revoke`,
+    {
+      method: "POST",
+    },
+  );
+}
+
 export function createSession(title: string): Promise<Session> {
   return requestJSON<Session>("/api/sessions", {
     method: "POST",

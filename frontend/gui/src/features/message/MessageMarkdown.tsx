@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { CodeBlock } from "./CodeBlock";
 import { MermaidBlock } from "./MermaidBlock";
 
 type MessageMarkdownProps = {
@@ -34,13 +35,7 @@ export function MessageMarkdown(props: MessageMarkdownProps) {
                 return <MermaidBlock chart={value} />;
               }
 
-              return (
-                <pre className="message-markdown-pre">
-                  <code className={codeClassName} {...rest}>
-                    {value}
-                  </code>
-                </pre>
-              );
+                  return <CodeBlock code={value} language={language} />;
             }
 
             return (
