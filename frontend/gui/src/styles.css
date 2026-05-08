@@ -69,6 +69,12 @@ textarea {
   margin-bottom: 12px;
 }
 
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .main {
   display: flex;
   flex-direction: column;
@@ -182,16 +188,114 @@ textarea {
 }
 
 .session {
-  padding: 10px;
-  border-radius: 8px;
+  padding: 12px;
+  border-radius: 14px;
   cursor: pointer;
-  margin-bottom: 8px;
-  background: #151922;
-  border: 1px solid transparent;
+  background: linear-gradient(180deg, #171b24 0%, #121722 100%);
+  border: 1px solid #232d3d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .session.active {
   border-color: #2b6ef3;
+  box-shadow: 0 0 0 1px rgba(43, 110, 243, 0.18);
+}
+
+.session-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.session-title-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.session-title {
+  font-weight: 600;
+  line-height: 1.35;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.session-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.session-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 9px;
+  background: #252b36;
+  color: #cfd7e6;
+}
+
+.session-icon-button:hover {
+  background: #303745;
+}
+
+.session-icon-button.danger {
+  background: rgba(163, 57, 57, 0.2);
+  color: #ffb4b4;
+}
+
+.session-icon-button.danger:hover {
+  background: rgba(163, 57, 57, 0.32);
+}
+
+.session-icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.session-rename-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.session-rename-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.session-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.session-badge.running {
+  background: rgba(43, 110, 243, 0.18);
+  color: #9fc1ff;
 }
 
 .msg {
@@ -199,6 +303,8 @@ textarea {
   padding: 12px;
   border-radius: 10px;
   background: #151922;
+  max-width: min(860px, 78%);
+  border: 1px solid #23262d;
 }
 
 .role {
@@ -213,6 +319,92 @@ textarea {
   word-break: break-word;
   margin: 0;
   font: inherit;
+}
+
+.msg-row {
+  display: flex;
+  margin-bottom: 14px;
+}
+
+.msg-row.user {
+  justify-content: flex-end;
+}
+
+.msg-row.assistant {
+  justify-content: center;
+}
+
+.user-bubble {
+  background: linear-gradient(180deg, #2b3345 0%, #222a39 100%);
+  border-color: #3a465f;
+  margin-left: auto;
+}
+
+.assistant-bubble {
+  width: min(920px, 100%);
+  max-width: min(920px, 100%);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tool-bubble {
+  background: #131820;
+  border-style: dashed;
+}
+
+.assistant-bubble .role {
+  margin-bottom: 12px;
+  opacity: 0.68;
+  letter-spacing: 0.04em;
+}
+
+.assistant-bubble .thinking-block {
+  margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.assistant-bubble .message-finish {
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+.thinking-block {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.thinking-block summary {
+  cursor: pointer;
+  user-select: none;
+  color: #b9c4d8;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.thinking-block[open] summary {
+  margin-bottom: 10px;
+}
+
+.message-meta {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.message-finish {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+}
+
+.message-finish.error {
+  color: #ffb4b4;
 }
 
 .perm {
@@ -234,34 +426,6 @@ textarea {
 
 .spacer {
   flex: 1;
-}
-
-.connection-status.connected {
-  color: #6dd38a;
-}
-
-.connection-status.reconnecting,
-.connection-status.connecting {
-  color: #f0b35a;
-}
-
-.connection-status.disconnected {
-  color: #ee6b6b;
-}
-
-.error-banner {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: rgba(163, 57, 57, 0.18);
-  border-bottom: 1px solid #5b2a2a;
-  color: #ffcccc;
-  flex-shrink: 0;
-}
-
-.error-banner button {
-  margin-left: auto;
 }
 
 .jump-latest {

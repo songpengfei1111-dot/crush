@@ -43,8 +43,28 @@ export function createSession(title: string): Promise<Session> {
   });
 }
 
+export function renameSession(sessionID: string, title: string): Promise<Session> {
+  return requestJSON<Session>(`/api/sessions/${encodeURIComponent(sessionID)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+}
+
+export function deleteSession(sessionID: string): Promise<void> {
+  return requestJSON<void>(`/api/sessions/${encodeURIComponent(sessionID)}`, {
+    method: "DELETE",
+  });
+}
+
 export function cancelSession(sessionID: string): Promise<void> {
   return requestJSON<void>(`/api/sessions/${encodeURIComponent(sessionID)}/cancel`, {
+    method: "POST",
+  });
+}
+
+export function summarizeSession(sessionID: string): Promise<void> {
+  return requestJSON<void>(`/api/sessions/${encodeURIComponent(sessionID)}/summarize`, {
     method: "POST",
   });
 }

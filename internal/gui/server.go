@@ -27,9 +27,14 @@ func NewServer(controller *Controller) *Server {
 	mux.Handle("GET /assets/", s.staticHandler())
 	mux.HandleFunc("GET /api/bootstrap", s.handleBootstrap)
 	mux.HandleFunc("POST /api/sessions", s.handleCreateSession)
+	mux.HandleFunc("PATCH /api/sessions/{sid}", s.handleRenameSession)
+	mux.HandleFunc("DELETE /api/sessions/{sid}", s.handleDeleteSession)
 	mux.HandleFunc("GET /api/sessions/{sid}/messages", s.handleListMessages)
 	mux.HandleFunc("POST /api/sessions/{sid}/messages", s.handleSendMessage)
 	mux.HandleFunc("POST /api/sessions/{sid}/cancel", s.handleCancel)
+	mux.HandleFunc("GET /api/sessions/{sid}/queue", s.handleQueueInfo)
+	mux.HandleFunc("POST /api/sessions/{sid}/queue/clear", s.handleClearQueue)
+	mux.HandleFunc("POST /api/sessions/{sid}/summarize", s.handleSummarize)
 	mux.HandleFunc("POST /api/permissions/allow", s.handleAllowPermission)
 	mux.HandleFunc("POST /api/permissions/deny", s.handleDenyPermission)
 	mux.HandleFunc("GET /api/events", s.handleEvents)
@@ -91,6 +96,30 @@ func (s *Server) handleCreateSession(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, sess)
 }
 
+func (s *Server) handleRenameSession(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Title string `json:"title"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	sess, err := s.controller.RenameSession(r.Context(), r.PathValue("sid"), req.Title)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, sess)
+}
+
+func (s *Server) handleDeleteSession(w http.ResponseWriter, r *http.Request) {
+	if err := s.controller.DeleteSession(r.Context(), r.PathValue("sid")); err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (s *Server) handleListMessages(w http.ResponseWriter, r *http.Request) {
 	msgs, err := s.controller.ListMessages(r.Context(), r.PathValue("sid"))
 	if err != nil {
@@ -118,6 +147,23 @@ func (s *Server) handleSendMessage(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleCancel(w http.ResponseWriter, r *http.Request) {
 	s.controller.Cancel(r.PathValue("sid"))
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleQueueInfo(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, s.controller.QueueInfo(r.PathValue("sid")))
+}
+
+func (s *Server) handleClearQueue(w http.ResponseWriter, r *http.Request) {
+	s.controller.ClearQueue(r.PathValue("sid"))
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleSummarize(w http.ResponseWriter, r *http.Request) {
+	if err := s.controller.SummarizeSession(r.Context(), r.PathValue("sid")); err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *Server) handleAllowPermission(w http.ResponseWriter, r *http.Request) {

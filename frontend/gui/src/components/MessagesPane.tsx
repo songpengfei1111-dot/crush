@@ -1,7 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { Message } from "../types";
-import { renderMessageContent } from "../utils/messageParts";
+import {
+  finishPart,
+  firstText,
+  hasFinishedReasoning,
+  reasoningText,
+  toolCallCount,
+  toolResultCount,
+} from "../utils/messageParts";
 
 type MessagesPaneProps = {
   messages: Message[];
@@ -14,6 +21,7 @@ export function MessagesPane(props: MessagesPaneProps) {
   const previousMessageCountRef = useRef(0);
   const [stickToBottom, setStickToBottom] = useState(true);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const [expandedThinking, setExpandedThinking] = useState<Record<string, boolean>>({});
 
   function scrollToBottom() {
     const container = containerRef.current;
@@ -41,6 +49,7 @@ export function MessagesPane(props: MessagesPaneProps) {
     previousMessageCountRef.current = 0;
     setStickToBottom(true);
     setShowJumpToLatest(false);
+    setExpandedThinking({});
   }, [sessionID]);
 
   useEffect(() => {
@@ -57,14 +66,23 @@ export function MessagesPane(props: MessagesPaneProps) {
     previousMessageCountRef.current = messages.length;
   }, [messages, stickToBottom]);
 
+  function toggleThinking(messageID: string, nextOpen: boolean) {
+    setExpandedThinking((prev) => ({
+      ...prev,
+      [messageID]: nextOpen,
+    }));
+  }
+
   return (
     <div className="messages-wrap">
       <div ref={containerRef} className="messages" onScroll={handleScroll}>
         {messages.map((message) => (
-          <div key={message.id} className="msg">
-            <div className="role">{message.role}</div>
-            <pre>{renderMessageContent(message.parts)}</pre>
-          </div>
+          <MessageCard
+            key={message.id}
+            message={message}
+            thinkingExpanded={expandedThinking[message.id]}
+            onToggleThinking={(nextOpen) => toggleThinking(message.id, nextOpen)}
+          />
         ))}
       </div>
       {showJumpToLatest ? (
@@ -79,6 +97,76 @@ export function MessagesPane(props: MessagesPaneProps) {
           有新消息，跳转到底部
         </button>
       ) : null}
+    </div>
+  );
+}
+
+type MessageCardProps = {
+  message: Message;
+  thinkingExpanded?: boolean;
+  onToggleThinking: (nextOpen: boolean) => void;
+};
+
+function MessageCard(props: MessageCardProps) {
+  const { message, thinkingExpanded, onToggleThinking } = props;
+  const text = useMemo(() => firstText(message.parts), [message.parts]);
+  const thinking = useMemo(() => reasoningText(message.parts), [message.parts]);
+  const finish = useMemo(() => finishPart(message.parts), [message.parts]);
+  const toolCalls = useMemo(() => toolCallCount(message.parts), [message.parts]);
+  const toolResults = useMemo(() => toolResultCount(message.parts), [message.parts]);
+  const reasoningFinished = useMemo(() => hasFinishedReasoning(message.parts), [message.parts]);
+
+  const defaultThinkingOpen = !reasoningFinished || !text;
+  const showThinking = Boolean(thinking);
+  const isThinkingOpen = thinkingExpanded ?? defaultThinkingOpen;
+  const isUser = message.role === "user";
+  const isAssistant = message.role === "assistant";
+  const isTool = message.role === "tool";
+
+  return (
+    <div className={`msg-row${isUser ? " user" : isAssistant ? " assistant" : ""}`}>
+      <div
+        className={[
+          "msg",
+          isUser ? "user-bubble" : "",
+          isAssistant ? "assistant-bubble" : "",
+          isTool ? "tool-bubble" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <div className="role">{message.role}</div>
+
+        {showThinking ? (
+          <details
+            className="thinking-block"
+            open={isThinkingOpen}
+            onToggle={(event) => onToggleThinking((event.currentTarget as HTMLDetailsElement).open)}
+          >
+            <summary>
+              {reasoningFinished ? "已折叠思考过程" : "思考中..."}
+            </summary>
+            <pre>{thinking}</pre>
+          </details>
+        ) : null}
+
+        {text ? <pre>{text}</pre> : null}
+
+        {toolCalls > 0 || toolResults > 0 ? (
+          <div className="message-meta muted">
+            {toolCalls > 0 ? `工具调用 ${toolCalls}` : ""}
+            {toolCalls > 0 && toolResults > 0 ? " · " : ""}
+            {toolResults > 0 ? `工具结果 ${toolResults}` : ""}
+          </div>
+        ) : null}
+
+        {finish?.message || finish?.details ? (
+          <div className={`message-finish${finish.reason === "error" ? " error" : ""}`}>
+            {finish.message ? <div>{finish.message}</div> : null}
+            {finish.details ? <div className="muted">{finish.details}</div> : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

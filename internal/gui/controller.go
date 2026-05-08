@@ -30,6 +30,11 @@ type Bootstrap struct {
 	Permissions      []proto.PermissionRequest `json:"permissions"`
 }
 
+type QueueInfo struct {
+	Count   int      `json:"count"`
+	Prompts []string `json:"prompts"`
+}
+
 func NewController(ws workspace.Workspace) *Controller {
 	return &Controller{ws: ws}
 }
@@ -87,6 +92,26 @@ func (c *Controller) CreateSession(ctx context.Context, title string) (proto.Ses
 	return eventpayload.SessionFromDomain(sess), nil
 }
 
+func (c *Controller) RenameSession(ctx context.Context, sessionID, title string) (proto.Session, error) {
+	sess, err := c.ws.GetSession(ctx, sessionID)
+	if err != nil {
+		return proto.Session{}, err
+	}
+	if title == "" {
+		title = defaultSessionTitle
+	}
+	sess.Title = title
+	saved, err := c.ws.SaveSession(ctx, sess)
+	if err != nil {
+		return proto.Session{}, err
+	}
+	return eventpayload.SessionFromDomain(saved), nil
+}
+
+func (c *Controller) DeleteSession(ctx context.Context, sessionID string) error {
+	return c.ws.DeleteSession(ctx, sessionID)
+}
+
 func (c *Controller) ListMessages(ctx context.Context, sessionID string) ([]proto.Message, error) {
 	msgs, err := c.ws.ListMessages(ctx, sessionID)
 	if err != nil {
@@ -101,6 +126,25 @@ func (c *Controller) SendMessage(ctx context.Context, sessionID, prompt string) 
 
 func (c *Controller) Cancel(sessionID string) {
 	c.ws.AgentCancel(sessionID)
+}
+
+func (c *Controller) QueueInfo(sessionID string) QueueInfo {
+	prompts := c.ws.AgentQueuedPromptsList(sessionID)
+	if prompts == nil {
+		prompts = []string{}
+	}
+	return QueueInfo{
+		Count:   c.ws.AgentQueuedPrompts(sessionID),
+		Prompts: prompts,
+	}
+}
+
+func (c *Controller) ClearQueue(sessionID string) {
+	c.ws.AgentClearQueue(sessionID)
+}
+
+func (c *Controller) SummarizeSession(ctx context.Context, sessionID string) error {
+	return c.ws.AgentSummarize(ctx, sessionID)
 }
 
 func (c *Controller) GrantPermission(req proto.PermissionRequest, persistent bool) {

@@ -13,23 +13,18 @@ export default function App() {
       <SessionsPane
         sessions={state.sessions}
         currentSessionID={state.currentSessionID}
+        busySessionID={state.busySessionID}
         onCreateSession={() => void actions.createNewSession()}
         onSelectSession={(sessionID) => void actions.selectSession(sessionID)}
+        onRenameSession={(sessionID, title) => void actions.renameExistingSession(sessionID, title)}
+        onDeleteSession={(sessionID) => void actions.deleteExistingSession(sessionID)}
+        onSummarizeSession={(sessionID) => void actions.summarizeSessionByID(sessionID)}
       />
       <main className="main">
         <Toolbar
           title={currentSession ? currentSession.title : "Crush GUI"}
           isBusy={state.agent.is_busy}
-          streamStatus={state.streamStatus}
         />
-        {state.errorMessage ? (
-          <div className="error-banner">
-            <span>{state.errorMessage}</span>
-            <button className="secondary" onClick={actions.clearError}>
-              关闭
-            </button>
-          </div>
-        ) : null}
         <MessagesPane messages={currentMessages} sessionID={state.currentSessionID} />
         <Composer
           onSend={actions.sendPrompt}

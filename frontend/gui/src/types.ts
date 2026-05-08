@@ -116,8 +116,6 @@ export interface AgentEvent {
   type?: string;
 }
 
-export type StreamStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
-
 export interface AppState {
   sessions: Session[];
   messages: Message[];
@@ -125,8 +123,6 @@ export interface AppState {
   permissions: PermissionRequest[];
   agent: AgentInfo;
   busySessionID: string;
-  streamStatus: StreamStatus;
-  errorMessage: string;
 }
 
 export type EventMutationType = "created" | "updated" | "deleted";
