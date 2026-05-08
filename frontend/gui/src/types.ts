@@ -70,6 +70,20 @@ export interface BootstrapResponse {
   permissions: PermissionRequest[];
 }
 
+export interface AgentEvent {
+  session_id?: string;
+  session_title?: string;
+  type?: string;
+}
+
+export interface AppState {
+  sessions: Session[];
+  messages: Message[];
+  currentSessionID: string;
+  permissions: PermissionRequest[];
+  agent: AgentInfo;
+}
+
 export interface EventPayload<TPayload> {
   type: string;
   payload: TPayload;

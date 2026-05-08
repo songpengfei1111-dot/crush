@@ -1,0 +1,70 @@
+import type {
+  BootstrapResponse,
+  Message,
+  PermissionRequest,
+  Session,
+} from "../types";
+
+async function requestJSON<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  const response = await fetch(input, init);
+  if (!response.ok) {
+    throw new Error(`request failed: ${response.status}`);
+  }
+
+  // Some endpoints intentionally return an empty body.
+  if (response.status === 204 || response.status === 202) {
+    return undefined as T
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export function getBootstrap(): Promise<BootstrapResponse> {
+  return requestJSON<BootstrapResponse>("/api/bootstrap");
+}
+
+export function getMessages(sessionID: string): Promise<Message[]> {
+  return requestJSON<Message[]>(`/api/sessions/${encodeURIComponent(sessionID)}/messages`);
+}
+
+export function postMessage(sessionID: string, prompt: string): Promise<void> {
+  return requestJSON<void>(`/api/sessions/${encodeURIComponent(sessionID)}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+}
+
+export function createSession(title: string): Promise<Session> {
+  return requestJSON<Session>("/api/sessions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+}
+
+export function cancelSession(sessionID: string): Promise<void> {
+  return requestJSON<void>(`/api/sessions/${encodeURIComponent(sessionID)}/cancel`, {
+    method: "POST",
+  });
+}
+
+export function allowPermission(permission: PermissionRequest, persistent: boolean): Promise<void> {
+  return requestJSON<void>("/api/permissions/allow", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ permission, persistent }),
+  });
+}
+
+export function denyPermission(permission: PermissionRequest): Promise<void> {
+  return requestJSON<void>("/api/permissions/deny", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ permission }),
+  });
+}
+
+export function openEventStream(): EventSource {
+  return new EventSource("/api/events");
+}
