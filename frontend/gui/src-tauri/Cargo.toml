@@ -1,0 +1,12 @@
+[package]
+name = "crush-gui-shell"
+version = "0.1.0"
+edition = "2021"
+description = "Desktop shell for the Crush GUI"
+
+[build-dependencies]
+tauri-build = { version = "2" }
+
+[dependencies]
+tauri = { version = "2" }
+url = "2"
