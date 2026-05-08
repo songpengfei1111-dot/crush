@@ -20,12 +20,22 @@ export default function App() {
         <Toolbar
           title={currentSession ? currentSession.title : "Crush GUI"}
           isBusy={state.agent.is_busy}
-          onCancel={() => void actions.cancelCurrentSession()}
+          streamStatus={state.streamStatus}
         />
-        <MessagesPane messages={currentMessages} />
+        {state.errorMessage ? (
+          <div className="error-banner">
+            <span>{state.errorMessage}</span>
+            <button className="secondary" onClick={actions.clearError}>
+              关闭
+            </button>
+          </div>
+        ) : null}
+        <MessagesPane messages={currentMessages} sessionID={state.currentSessionID} />
         <Composer
           onSend={actions.sendPrompt}
           onRefresh={actions.refreshMessages}
+          onCancel={actions.cancelCurrentSession}
+          isBusy={state.agent.is_busy}
         />
         <PermissionsPane
           permissions={state.permissions}

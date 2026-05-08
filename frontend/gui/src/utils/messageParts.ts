@@ -2,17 +2,16 @@ import type { MessagePart } from "../types";
 
 export function firstText(parts: MessagePart[] = []): string {
   return parts
-    .filter((part): part is MessagePart & { text: string } => typeof part.text === "string")
-    .map((part) => part.text)
+    .filter((part): part is Extract<MessagePart, { type: "text" }> => part.type === "text")
+    .map((part) => part.data.text)
     .join("\n");
 }
 
 export function reasoningText(parts: MessagePart[] = []): string {
   return parts
-    .filter(
-      (part): part is MessagePart & { thinking: string } => typeof part.thinking === "string" && !!part.thinking,
-    )
-    .map((part) => part.thinking)
+    .filter((part): part is Extract<MessagePart, { type: "reasoning" }> => part.type === "reasoning")
+    .map((part) => part.data.thinking)
+    .filter(Boolean)
     .join("\n");
 }
 

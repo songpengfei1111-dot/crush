@@ -22,7 +22,47 @@ export interface ReasoningPart {
   finished_at?: number;
 }
 
-export type MessagePart = Partial<TextPart & ReasoningPart> & Record<string, unknown>;
+export interface ToolCallPart {
+  id: string;
+  name: string;
+  input: string;
+  finished: boolean;
+}
+
+export interface ToolResultPart {
+  tool_call_id: string;
+  name: string;
+  content: string;
+  metadata?: string;
+  is_error?: boolean;
+}
+
+export interface FinishPart {
+  reason: "end_turn" | "max_tokens" | "tool_use" | "canceled" | "error" | "unknown";
+  time: number;
+  message?: string;
+  details?: string;
+}
+
+export interface BinaryPart {
+  path: string;
+  mime_type: string;
+  data: string;
+}
+
+export interface ImageURLPart {
+  url: string;
+  detail?: string;
+}
+
+export type MessagePart =
+  | { type: "text"; data: TextPart }
+  | { type: "reasoning"; data: ReasoningPart }
+  | { type: "tool_call"; data: ToolCallPart }
+  | { type: "tool_result"; data: ToolResultPart }
+  | { type: "finish"; data: FinishPart }
+  | { type: "binary"; data: BinaryPart }
+  | { type: "image_url"; data: ImageURLPart };
 
 export interface Message {
   id: string;
@@ -76,16 +116,23 @@ export interface AgentEvent {
   type?: string;
 }
 
+export type StreamStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
+
 export interface AppState {
   sessions: Session[];
   messages: Message[];
   currentSessionID: string;
   permissions: PermissionRequest[];
   agent: AgentInfo;
+  busySessionID: string;
+  streamStatus: StreamStatus;
+  errorMessage: string;
 }
 
+export type EventMutationType = "created" | "updated" | "deleted";
+
 export interface EventPayload<TPayload> {
-  type: string;
+  type: EventMutationType;
   payload: TPayload;
 }
 

@@ -2,6 +2,13 @@
   color-scheme: dark;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   font: 14px/1.5 -apple-system, BlinkMacSystemFont, sans-serif;
@@ -45,13 +52,15 @@ textarea {
 .app {
   display: grid;
   grid-template-columns: 280px 1fr;
-  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .sidebar {
   border-right: 1px solid #23262d;
   padding: 12px;
   overflow: auto;
+  min-height: 0;
 }
 
 .sidebar-actions {
@@ -61,9 +70,12 @@ textarea {
 }
 
 .main {
-  display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .toolbar {
@@ -72,19 +84,89 @@ textarea {
   align-items: center;
   padding: 12px;
   border-bottom: 1px solid #23262d;
+  flex-shrink: 0;
+}
+
+.messages-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .messages {
   overflow: auto;
   padding: 16px;
+  height: 100%;
+  min-height: 0;
 }
 
 .composer {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
   padding: 12px;
   border-top: 1px solid #23262d;
+  flex-shrink: 0;
+}
+
+.composer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 120px;
+  padding: 14px;
+  border: 1px solid #2a3242;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #171b24 0%, #121722 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.composer-input {
+  flex: 1;
+  min-height: 80px;
+  resize: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  outline: none;
+}
+
+.composer-input::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.composer-secondary-button {
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.composer-send-button {
+  min-width: 72px;
+  padding: 9px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.composer-send-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.composer-send-button.stop {
+  background: #a33939;
 }
 
 .permissions {
@@ -92,6 +174,7 @@ textarea {
   padding: 12px;
   max-height: 220px;
   overflow: auto;
+  flex-shrink: 0;
 }
 
 .permissions-list {
@@ -151,4 +234,39 @@ textarea {
 
 .spacer {
   flex: 1;
+}
+
+.connection-status.connected {
+  color: #6dd38a;
+}
+
+.connection-status.reconnecting,
+.connection-status.connecting {
+  color: #f0b35a;
+}
+
+.connection-status.disconnected {
+  color: #ee6b6b;
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(163, 57, 57, 0.18);
+  border-bottom: 1px solid #5b2a2a;
+  color: #ffcccc;
+  flex-shrink: 0;
+}
+
+.error-banner button {
+  margin-left: auto;
+}
+
+.jump-latest {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
