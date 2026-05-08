@@ -120,7 +120,14 @@ export function MermaidBlock(props: MermaidBlockProps) {
   return (
     <div className={classes}>
       <div className="message-card-header">
-        <div className="message-card-label">mermaid</div>
+        <div className="message-card-header-main">
+          <div className="message-card-window-controls" aria-hidden="true">
+            <span className="message-card-window-dot red" />
+            <span className="message-card-window-dot yellow" />
+            <span className="message-card-window-dot green" />
+          </div>
+          <div className="message-card-title">mermaid</div>
+        </div>
         <button className="message-card-button" onClick={() => void handleCopy()}>
           {copied ? "Copied" : "Copy"}
         </button>
