@@ -110,6 +110,132 @@
   font-size: 12px;
 }
 
+.message-markdown {
+  color: inherit;
+}
+
+.message-markdown > :first-child {
+  margin-top: 0;
+}
+
+.message-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.message-markdown p,
+.message-markdown ul,
+.message-markdown ol,
+.message-markdown blockquote,
+.message-markdown table,
+.message-markdown pre {
+  margin: 0 0 12px;
+}
+
+.message-markdown ul,
+.message-markdown ol {
+  padding-left: 22px;
+}
+
+.message-markdown li + li {
+  margin-top: 4px;
+}
+
+.message-markdown a {
+  color: #8cb4ff;
+}
+
+.message-markdown blockquote {
+  margin-left: 0;
+  padding-left: 12px;
+  border-left: 3px solid rgba(140, 180, 255, 0.35);
+  color: #c6d2e8;
+}
+
+.message-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.message-markdown th,
+.message-markdown td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+  vertical-align: top;
+}
+
+.message-markdown th {
+  color: #dce6f8;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.message-markdown tr:last-child td {
+  border-bottom: 0;
+}
+
+.message-markdown-pre {
+  overflow: auto;
+  padding: 12px;
+  border-radius: 10px;
+  background: #11161d;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.message-markdown-pre code {
+  white-space: pre;
+  word-break: normal;
+}
+
+.message-markdown-inline-code {
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 0.95em;
+}
+
+.mermaid-block {
+  margin: 0 0 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #11161d;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: auto;
+}
+
+.mermaid-block.is-loading {
+  color: #b9c4d8;
+}
+
+.mermaid-block.is-error {
+  border-color: rgba(255, 120, 120, 0.25);
+}
+
+.mermaid-block-title {
+  margin-bottom: 6px;
+  color: #ffd2d2;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mermaid-block-error {
+  margin-bottom: 10px;
+  color: #ffb4b4;
+  font-size: 12px;
+}
+
+.mermaid-block-canvas {
+  min-width: fit-content;
+}
+
+.mermaid-block-canvas svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .message-finish {
   margin-top: 10px;
   padding-top: 10px;

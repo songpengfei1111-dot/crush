@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { MessageMarkdown } from "../features/message/MessageMarkdown";
 import type { Message } from "../shared/types";
 import {
   finishPart,
@@ -150,7 +151,12 @@ function MessageCard(props: MessageCardProps) {
           </details>
         ) : null}
 
-        {text ? <pre>{text}</pre> : null}
+        {text ? (
+          <MessageMarkdown
+            content={text}
+            className={isAssistant ? "assistant-markdown" : isUser ? "user-markdown" : undefined}
+          />
+        ) : null}
 
         {toolCalls > 0 || toolResults > 0 ? (
           <div className="message-meta muted">
