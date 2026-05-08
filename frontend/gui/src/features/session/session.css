@@ -1,0 +1,116 @@
+.sessions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.session {
+  padding: 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  background: linear-gradient(180deg, #171b24 0%, #121722 100%);
+  border: 1px solid #232d3d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.session.active {
+  border-color: #2b6ef3;
+  box-shadow: 0 0 0 1px rgba(43, 110, 243, 0.18);
+}
+
+.session-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.session-title-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.session-title {
+  font-weight: 600;
+  line-height: 1.35;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.session-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.session-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 9px;
+  background: #252b36;
+  color: #cfd7e6;
+}
+
+.session-icon-button:hover {
+  background: #303745;
+}
+
+.session-icon-button.danger {
+  background: rgba(163, 57, 57, 0.2);
+  color: #ffb4b4;
+}
+
+.session-icon-button.danger:hover {
+  background: rgba(163, 57, 57, 0.32);
+}
+
+.session-icon-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.session-rename-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.session-rename-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.session-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.session-badge.running {
+  background: rgba(43, 110, 243, 0.18);
+  color: #9fc1ff;
+}

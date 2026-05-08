@@ -220,15 +220,17 @@ func (a *sessionAgent) Run(ctx context.Context, call SessionAgentCall) (*fantasy
 		return nil, fmt.Errorf("failed to get session messages: %w", err)
 	}
 
-	var wg sync.WaitGroup
 	// Generate title if first message.
 	if len(msgs) == 0 {
-		titleCtx := ctx // Copy to avoid race with ctx reassignment below.
-		wg.Go(func() {
+		// Title generation is best-effort metadata and should never delay or
+		// fail the user's first turn. Run it in a detached, time-bounded
+		// background context so the main response can return immediately.
+		titleCtx, titleCancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+		go func() {
+			defer titleCancel()
 			a.generateTitle(titleCtx, call.SessionID, call.Prompt)
-		})
+		}()
 	}
-	defer wg.Wait()
 
 	// Add the user message to the session.
 	_, err = a.createUserMessage(ctx, call)

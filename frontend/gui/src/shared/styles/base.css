@@ -1,0 +1,58 @@
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0f1115;
+  color: #e8e8e8;
+}
+
+button {
+  background: #2b6ef3;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #303540;
+}
+
+button.danger {
+  background: #a33939;
+}
+
+textarea,
+input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #151922;
+  color: #eee;
+  border: 1px solid #303540;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.muted {
+  opacity: 0.7;
+}
+
+.spacer {
+  flex: 1;
+}

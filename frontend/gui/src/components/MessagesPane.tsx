@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { Message } from "../types";
+import type { Message } from "../shared/types";
 import {
   finishPart,
   firstText,

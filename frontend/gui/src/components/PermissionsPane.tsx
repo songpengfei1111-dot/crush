@@ -1,4 +1,4 @@
-import type { PermissionRequest } from "../types";
+import type { PermissionRequest } from "../shared/types";
 
 type PermissionsPaneProps = {
   permissions: PermissionRequest[];

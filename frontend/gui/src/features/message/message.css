@@ -1,0 +1,129 @@
+.messages-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.messages {
+  overflow: auto;
+  padding: 16px;
+  height: 100%;
+  min-height: 0;
+}
+
+.msg {
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #151922;
+  max-width: min(860px, 78%);
+  border: 1px solid #23262d;
+}
+
+.role {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.msg pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font: inherit;
+}
+
+.msg-row {
+  display: flex;
+  margin-bottom: 14px;
+}
+
+.msg-row.user {
+  justify-content: flex-end;
+}
+
+.msg-row.assistant {
+  justify-content: center;
+}
+
+.user-bubble {
+  background: linear-gradient(180deg, #2b3345 0%, #222a39 100%);
+  border-color: #3a465f;
+  margin-left: auto;
+}
+
+.assistant-bubble {
+  width: min(920px, 100%);
+  max-width: min(920px, 100%);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tool-bubble {
+  background: #131820;
+  border-style: dashed;
+}
+
+.assistant-bubble .role {
+  margin-bottom: 12px;
+  opacity: 0.68;
+  letter-spacing: 0.04em;
+}
+
+.assistant-bubble .thinking-block {
+  margin-bottom: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.assistant-bubble .message-finish {
+  border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+.thinking-block {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.thinking-block summary {
+  cursor: pointer;
+  user-select: none;
+  color: #b9c4d8;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.thinking-block[open] summary {
+  margin-bottom: 10px;
+}
+
+.message-meta {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.message-finish {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+}
+
+.message-finish.error {
+  color: #ffb4b4;
+}
+
+.jump-latest {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}

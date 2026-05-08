@@ -101,38 +101,3 @@ export interface AgentInfo {
     model?: string;
   };
 }
-
-export interface BootstrapResponse {
-  sessions: Session[];
-  current_session_id: string;
-  messages: Message[];
-  agent: AgentInfo;
-  permissions: PermissionRequest[];
-}
-
-export interface AgentEvent {
-  session_id?: string;
-  session_title?: string;
-  type?: string;
-}
-
-export interface AppState {
-  sessions: Session[];
-  messages: Message[];
-  currentSessionID: string;
-  permissions: PermissionRequest[];
-  agent: AgentInfo;
-  busySessionID: string;
-}
-
-export type EventMutationType = "created" | "updated" | "deleted";
-
-export interface EventPayload<TPayload> {
-  type: EventMutationType;
-  payload: TPayload;
-}
-
-export interface EventEnvelope<TPayload> {
-  type: string;
-  payload: EventPayload<TPayload>;
-}

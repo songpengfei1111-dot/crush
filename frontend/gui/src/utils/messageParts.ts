@@ -1,4 +1,4 @@
-import type { MessagePart } from "../types";
+import type { MessagePart } from "../shared/types";
 
 export function firstText(parts: MessagePart[] = []): string {
   return parts

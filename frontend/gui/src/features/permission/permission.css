@@ -1,0 +1,24 @@
+.permissions {
+  border-top: 1px solid #23262d;
+  padding: 12px;
+  max-height: 220px;
+  overflow: auto;
+  flex-shrink: 0;
+}
+
+.permissions-list {
+  margin-top: 8px;
+}
+
+.perm {
+  padding: 10px;
+  background: #151922;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.perm-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}

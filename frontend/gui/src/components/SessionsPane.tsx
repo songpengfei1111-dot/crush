@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import type { Session } from "../types";
+import type { Session } from "../shared/types";
 
 type SessionsPaneProps = {
   sessions: Session[];
