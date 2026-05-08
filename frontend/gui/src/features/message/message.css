@@ -126,6 +126,418 @@
   font-size: 12px;
 }
 
+.tool-invocation-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tool-invocation-card {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.018);
+  overflow: hidden;
+}
+
+.tool-invocation-card.error {
+  border-color: rgba(255, 120, 120, 0.18);
+}
+
+.tool-invocation-card.todos {
+  border-color: rgba(146, 176, 255, 0.16);
+  background: rgba(120, 154, 255, 0.04);
+}
+
+.tool-invocation-card.todos.complete {
+  border-color: rgba(109, 219, 171, 0.22);
+  background: rgba(109, 219, 171, 0.05);
+}
+
+.todo-tool-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+}
+
+.todo-tool-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.todo-tool-header.expanded {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+.todo-tool-header-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.todo-tool-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.todo-tool-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.todo-tool-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #edf3ff;
+  letter-spacing: 0.01em;
+}
+
+.todo-tool-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(232, 232, 232, 0.64);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.todo-tool-status.pending {
+  background: rgba(255, 214, 102, 0.1);
+  color: #f4d27a;
+}
+
+.todo-tool-status.error {
+  background: rgba(255, 120, 120, 0.13);
+  color: #ffb4b4;
+}
+
+.todo-tool-summary {
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(232, 232, 232, 0.5);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.todo-tool-summary.error {
+  color: rgba(255, 180, 180, 0.92);
+}
+
+.todo-tool-list {
+  display: grid;
+  gap: 3px;
+  padding: 0 10px 10px;
+}
+
+.todo-tool-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(5, 10, 20, 0.2);
+}
+
+.todo-tool-item.completed {
+  color: rgba(232, 232, 232, 0.6);
+}
+
+.todo-tool-item.in_progress {
+  background: rgba(140, 180, 255, 0.08);
+}
+
+.todo-tool-item.pending {
+  color: rgba(232, 232, 232, 0.86);
+}
+
+.todo-tool-item.just-completed {
+  background: rgba(109, 219, 171, 0.08);
+}
+
+.todo-tool-state-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.todo-tool-state-icon.pending {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.todo-tool-state-icon.in_progress {
+  border-color: rgba(140, 180, 255, 0.28);
+  background: rgba(140, 180, 255, 0.08);
+}
+
+.todo-tool-state-icon.completed {
+  width: 16px;
+  height: 16px;
+  margin-left: 1px;
+  margin-right: 1px;
+  border-color: rgba(109, 219, 171, 0.22);
+  background: rgba(89, 211, 154, 0.14);
+}
+
+.todo-tool-state-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a9c9ff;
+}
+
+.todo-tool-state-check {
+  color: #82d7ad;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.todo-tool-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.todo-tool-item.completed .todo-tool-text {
+  text-decoration: line-through;
+  text-decoration-color: rgba(232, 232, 232, 0.34);
+}
+
+.tool-invocation-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  text-align: left;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom-color: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.tool-invocation-header:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.tool-invocation-header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tool-invocation-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(232, 232, 232, 0.74);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.tool-invocation-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.tool-invocation-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tool-invocation-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #eceff6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tool-invocation-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(232, 232, 232, 0.7);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.tool-invocation-status.pending {
+  background: rgba(255, 214, 102, 0.1);
+  color: #f4d27a;
+}
+
+.tool-invocation-status.error {
+  background: rgba(255, 120, 120, 0.12);
+  color: #ffb4b4;
+}
+
+.tool-invocation-summary {
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(232, 232, 232, 0.56);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.tool-invocation-summary.error {
+  color: rgba(255, 180, 180, 0.9);
+}
+
+.tool-invocation-header-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tool-invocation-duration {
+  flex-shrink: 0;
+  color: rgba(232, 232, 232, 0.42);
+  font-size: 11px;
+}
+
+.tool-invocation-chevron {
+  color: rgba(232, 232, 232, 0.5);
+  font-size: 16px;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 140ms ease;
+}
+
+.tool-invocation-chevron.open {
+  transform: rotate(90deg);
+}
+
+.tool-invocation-body {
+  padding: 10px 12px 12px;
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.tool-invocation-section {
+  padding: 0;
+}
+
+.tool-invocation-section + .tool-invocation-section {
+  margin-top: 10px;
+}
+
+.tool-invocation-section-title {
+  margin-bottom: 6px;
+  color: rgba(232, 232, 232, 0.44);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tool-invocation-block,
+.tool-invocation-meta pre {
+  margin: 0;
+  padding: 10px 11px;
+  border-radius: 9px;
+  background: rgba(6, 9, 15, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.045);
+  color: #d8e2f5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.tool-invocation-block.error,
+.tool-invocation-empty.error,
+.tool-invocation-meta pre.error {
+  color: #ffb4b4;
+}
+
+.tool-invocation-empty {
+  padding: 10px 11px;
+  border-radius: 9px;
+  background: rgba(6, 9, 15, 0.22);
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+  color: rgba(232, 232, 232, 0.72);
+  font-size: 12px;
+}
+
+.tool-invocation-meta {
+  margin-top: 10px;
+}
+
+.tool-invocation-meta summary {
+  cursor: pointer;
+  user-select: none;
+  color: rgba(232, 232, 232, 0.54);
+  font-size: 11px;
+  list-style: none;
+}
+
+.tool-invocation-meta summary::-webkit-details-marker {
+  display: none;
+}
+
+.tool-invocation-meta summary::before {
+  content: "›";
+  display: inline-block;
+  margin-right: 6px;
+  transform: rotate(0deg);
+  transition: transform 120ms ease;
+}
+
+.tool-invocation-meta[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.tool-invocation-meta pre {
+  margin-top: 8px;
+}
+
 .message-toolbar {
   display: flex;
   align-items: center;

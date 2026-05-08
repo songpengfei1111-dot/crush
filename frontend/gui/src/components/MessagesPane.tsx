@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { MessageMarkdown } from "../features/message/MessageMarkdown";
-import type { Message } from "../shared/types";
+import { ToolInvocationCard } from "../features/message/ToolInvocationCard";
+import type { Message, ToolResultPart } from "../shared/types";
 import { copyTextToClipboard } from "../utils/clipboard";
 import {
+  buildToolResultMap,
   finishPart,
   firstText,
   hasFinishedReasoning,
   reasoningText,
-  toolCallCount,
-  toolResultCount,
+  toolCalls,
+  toolResults,
 } from "../utils/messageParts";
 
 type MessagesPaneProps = {
@@ -28,6 +30,8 @@ export function MessagesPane(props: MessagesPaneProps) {
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [expandedThinking, setExpandedThinking] = useState<Record<string, boolean>>({});
   const [copiedMessageID, setCopiedMessageID] = useState("");
+  const [expandedToolInputs, setExpandedToolInputs] = useState<Record<string, boolean>>({});
+  const [expandedToolOutputs, setExpandedToolOutputs] = useState<Record<string, boolean>>({});
 
   function scrollToBottom() {
     const container = containerRef.current;
@@ -56,6 +60,8 @@ export function MessagesPane(props: MessagesPaneProps) {
     setStickToBottom(true);
     setShowJumpToLatest(false);
     setExpandedThinking({});
+    setExpandedToolInputs({});
+    setExpandedToolOutputs({});
     setCopiedMessageID("");
   }, [sessionID]);
 
@@ -97,6 +103,32 @@ export function MessagesPane(props: MessagesPaneProps) {
     return "";
   }, [messages]);
 
+  const toolResultsByCallID = useMemo(() => buildToolResultMap(messages), [messages]);
+
+  const visibleMessages = useMemo(() => {
+    const matchedResultIDs = new Set<string>();
+    for (const message of messages) {
+      for (const call of toolCalls(message.parts)) {
+        if (toolResultsByCallID.has(call.id)) {
+          matchedResultIDs.add(call.id);
+        }
+      }
+    }
+
+    return messages.filter((message) => {
+      if (message.role !== "tool") {
+        return true;
+      }
+
+      const results = toolResults(message.parts);
+      if (results.length === 0) {
+        return true;
+      }
+
+      return results.some((result) => !matchedResultIDs.has(result.tool_call_id));
+    });
+  }, [messages, toolResultsByCallID]);
+
   async function handleCopyMessage(messageID: string, value: string) {
     if (!value.trim()) {
       return;
@@ -116,16 +148,31 @@ export function MessagesPane(props: MessagesPaneProps) {
   return (
     <div className="messages-wrap">
       <div ref={containerRef} className="messages" onScroll={handleScroll}>
-        {messages.map((message) => (
+        {visibleMessages.map((message) => (
           <MessageCard
             key={message.id}
             message={message}
+            toolResultsByCallID={toolResultsByCallID}
             copied={copiedMessageID === message.id}
             canRevoke={message.role === "user" && !isBusy && message.id === latestUserMessageID}
             onCopyRawText={(value) => void handleCopyMessage(message.id, value)}
             onRevokeRound={() => onRevokeRound(message.id)}
             thinkingExpanded={expandedThinking[message.id]}
             onToggleThinking={(nextOpen) => toggleThinking(message.id, nextOpen)}
+            expandedToolInputIDs={expandedToolInputs}
+            expandedToolOutputIDs={expandedToolOutputs}
+            onToggleToolInput={(toolCallID, nextOpen) =>
+              setExpandedToolInputs((prev) => ({
+                ...prev,
+                [toolCallID]: nextOpen,
+              }))
+            }
+            onToggleToolOutput={(toolCallID, nextOpen) =>
+              setExpandedToolOutputs((prev) => ({
+                ...prev,
+                [toolCallID]: nextOpen,
+              }))
+            }
           />
         ))}
       </div>
@@ -147,21 +194,39 @@ export function MessagesPane(props: MessagesPaneProps) {
 
 type MessageCardProps = {
   message: Message;
+  toolResultsByCallID: Map<string, ToolResultPart>;
   copied: boolean;
   canRevoke: boolean;
   onCopyRawText: (value: string) => void;
   onRevokeRound: () => void;
   thinkingExpanded?: boolean;
   onToggleThinking: (nextOpen: boolean) => void;
+  expandedToolInputIDs: Record<string, boolean>;
+  expandedToolOutputIDs: Record<string, boolean>;
+  onToggleToolInput: (toolCallID: string, nextOpen: boolean) => void;
+  onToggleToolOutput: (toolCallID: string, nextOpen: boolean) => void;
 };
 
 function MessageCard(props: MessageCardProps) {
-  const { message, copied, canRevoke, onCopyRawText, onRevokeRound, thinkingExpanded, onToggleThinking } = props;
+  const {
+    message,
+    toolResultsByCallID,
+    copied,
+    canRevoke,
+    onCopyRawText,
+    onRevokeRound,
+    thinkingExpanded,
+    onToggleThinking,
+    expandedToolInputIDs,
+    expandedToolOutputIDs,
+    onToggleToolInput,
+    onToggleToolOutput,
+  } = props;
   const text = useMemo(() => firstText(message.parts), [message.parts]);
   const thinking = useMemo(() => reasoningText(message.parts), [message.parts]);
   const finish = useMemo(() => finishPart(message.parts), [message.parts]);
-  const toolCalls = useMemo(() => toolCallCount(message.parts), [message.parts]);
-  const toolResults = useMemo(() => toolResultCount(message.parts), [message.parts]);
+  const messageToolCalls = useMemo(() => toolCalls(message.parts), [message.parts]);
+  const messageToolResults = useMemo(() => toolResults(message.parts), [message.parts]);
   const reasoningFinished = useMemo(() => hasFinishedReasoning(message.parts), [message.parts]);
 
   const defaultThinkingOpen = !reasoningFinished || !text;
@@ -240,11 +305,32 @@ function MessageCard(props: MessageCardProps) {
           </div>
         ) : null}
 
-        {toolCalls > 0 || toolResults > 0 ? (
-          <div className="message-meta muted">
-            {toolCalls > 0 ? `tool Use ${toolCalls}` : ""}
-            {toolCalls > 0 && toolResults > 0 ? " · " : ""}
-            {toolResults > 0 ? `tool Result ${toolResults}` : ""}
+        {messageToolCalls.length > 0 ? (
+          <div className="tool-invocation-list">
+            {messageToolCalls.map((call) => (
+              <ToolInvocationCard
+                key={call.id}
+                call={call}
+                result={toolResultsByCallID.get(call.id)}
+                inputExpanded={Boolean(expandedToolInputIDs[call.id])}
+                outputExpanded={Boolean(expandedToolOutputIDs[call.id])}
+                onToggleInput={(nextOpen) => onToggleToolInput(call.id, nextOpen)}
+                onToggleOutput={(nextOpen) => onToggleToolOutput(call.id, nextOpen)}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        {isTool && messageToolResults.length > 0 ? (
+          <div className="tool-invocation-list">
+            {messageToolResults.map((result) => (
+              <ToolInvocationCard
+                key={result.tool_call_id}
+                result={result}
+                outputExpanded={Boolean(expandedToolOutputIDs[result.tool_call_id])}
+                onToggleOutput={(nextOpen) => onToggleToolOutput(result.tool_call_id, nextOpen)}
+              />
+            ))}
           </div>
         ) : null}
 
