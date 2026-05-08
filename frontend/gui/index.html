@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crush GUI</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-actions">
+        <button id="new-session">新建 Session</button>
+      </div>
+      <div id="sessions"></div>
+    </aside>
+    <main class="main">
+      <div class="toolbar">
+        <strong id="current-title">Crush GUI</strong>
+        <span class="muted" id="agent-status"></span>
+        <div class="spacer"></div>
+        <button class="danger" id="cancel">取消</button>
+      </div>
+      <div class="messages" id="messages"></div>
+      <div class="composer">
+        <textarea id="prompt" placeholder="输入你的 prompt..."></textarea>
+        <button id="send">发送</button>
+        <button class="secondary" id="reload">刷新</button>
+      </div>
+      <div class="permissions">
+        <strong>权限请求</strong>
+        <div id="permissions" class="permissions-list"></div>
+      </div>
+    </main>
+  </div>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

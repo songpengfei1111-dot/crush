@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net"
 	"net/http"
 
+	frontendgui "github.com/charmbracelet/crush/frontend/gui"
 	"github.com/charmbracelet/crush/internal/proto"
 	"github.com/charmbracelet/crush/internal/pubsub"
 )
@@ -22,6 +24,7 @@ func NewServer(controller *Controller) *Server {
 	s := &Server{controller: controller}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", s.handleIndex)
+	mux.Handle("GET /assets/", http.StripPrefix("/assets/", s.staticHandler()))
 	mux.HandleFunc("GET /api/bootstrap", s.handleBootstrap)
 	mux.HandleFunc("POST /api/sessions", s.handleCreateSession)
 	mux.HandleFunc("GET /api/sessions/{sid}/messages", s.handleListMessages)
@@ -54,8 +57,13 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, _ *http.Request) {
+	index, err := frontendgui.Assets.ReadFile("index.html")
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write([]byte(indexHTML))
+	_, _ = w.Write(index)
 }
 
 func (s *Server) handleBootstrap(w http.ResponseWriter, r *http.Request) {
@@ -190,241 +198,10 @@ func writeError(w http.ResponseWriter, err error, status int) {
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 }
 
-const indexHTML = `<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Crush GUI</title>
-  <style>
-    :root { color-scheme: dark; }
-    body { margin: 0; font: 14px/1.5 -apple-system, BlinkMacSystemFont, sans-serif; background: #0f1115; color: #e8e8e8; }
-    .app { display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
-    .sidebar { border-right: 1px solid #23262d; padding: 12px; overflow: auto; }
-    .main { display: grid; grid-template-rows: auto 1fr auto auto; min-width: 0; }
-    .toolbar { display: flex; gap: 8px; align-items: center; padding: 12px; border-bottom: 1px solid #23262d; }
-    .messages { overflow: auto; padding: 16px; }
-    .composer { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 12px; border-top: 1px solid #23262d; }
-    .permissions { border-top: 1px solid #23262d; padding: 12px; max-height: 220px; overflow: auto; }
-    button { background: #2b6ef3; color: white; border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
-    button.secondary { background: #303540; }
-    button.danger { background: #a33939; }
-    textarea, input { width: 100%; box-sizing: border-box; background: #151922; color: #eee; border: 1px solid #303540; border-radius: 8px; padding: 10px; }
-    textarea { min-height: 84px; resize: vertical; }
-    .session { padding: 10px; border-radius: 8px; cursor: pointer; margin-bottom: 8px; background: #151922; border: 1px solid transparent; }
-    .session.active { border-color: #2b6ef3; }
-    .msg { margin-bottom: 14px; padding: 12px; border-radius: 10px; background: #151922; }
-    .msg .role { font-size: 12px; opacity: 0.75; margin-bottom: 6px; text-transform: uppercase; }
-    .msg pre { white-space: pre-wrap; word-break: break-word; margin: 0; font: inherit; }
-    .perm { padding: 10px; background: #151922; border-radius: 8px; margin-bottom: 8px; }
-    .muted { opacity: 0.7; }
-    .spacer { flex: 1; }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <aside class="sidebar">
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <button id="new-session">新建 Session</button>
-      </div>
-      <div id="sessions"></div>
-    </aside>
-    <main class="main">
-      <div class="toolbar">
-        <strong id="current-title">Crush GUI</strong>
-        <span class="muted" id="agent-status"></span>
-        <div class="spacer"></div>
-        <button class="danger" id="cancel">取消</button>
-      </div>
-      <div class="messages" id="messages"></div>
-      <div class="composer">
-        <textarea id="prompt" placeholder="输入你的 prompt..."></textarea>
-        <button id="send">发送</button>
-        <button class="secondary" id="reload">刷新</button>
-      </div>
-      <div class="permissions">
-        <strong>权限请求</strong>
-        <div id="permissions" style="margin-top:8px;"></div>
-      </div>
-    </main>
-  </div>
-  <script>
-    const state = { sessions: [], messages: [], currentSessionID: "", permissions: [], agent: {} };
-
-    function firstText(parts = []) {
-      return parts.filter(p => p && typeof p.text === "string").map(p => p.text).join("\n");
-    }
-
-    function reasonText(parts = []) {
-      return parts.filter(p => p && typeof p.thinking === "string" && p.thinking).map(p => p.thinking).join("\n");
-    }
-
-    function upsertById(arr, item) {
-      const idx = arr.findIndex(v => v.id === item.id);
-      if (idx === -1) arr.push(item); else arr[idx] = item;
-    }
-
-    function render() {
-      const sessionsEl = document.getElementById("sessions");
-      sessionsEl.innerHTML = "";
-      for (const s of state.sessions) {
-        const div = document.createElement("div");
-        div.className = "session" + (s.id === state.currentSessionID ? " active" : "");
-        div.innerHTML = "<div>" + escapeHtml(s.title || "Untitled Session") + "</div><div class='muted'>" + s.id.slice(0, 8) + "</div>";
-        div.onclick = async () => { state.currentSessionID = s.id; await loadMessages(); render(); };
-        sessionsEl.appendChild(div);
-      }
-
-      const current = state.sessions.find(s => s.id === state.currentSessionID);
-      document.getElementById("current-title").textContent = current ? current.title : "Crush GUI";
-      document.getElementById("agent-status").textContent = state.agent && state.agent.is_busy ? "运行中" : "空闲";
-
-      const messagesEl = document.getElementById("messages");
-      messagesEl.innerHTML = "";
-      for (const m of state.messages.filter(m => m.session_id === state.currentSessionID)) {
-        const div = document.createElement("div");
-        div.className = "msg";
-        const text = firstText(m.parts);
-        const thinking = reasonText(m.parts);
-        let content = text;
-        if (!content && thinking) content = "[thinking]\n" + thinking;
-        if (!content) content = JSON.stringify(m.parts, null, 2);
-        div.innerHTML = "<div class='role'>" + escapeHtml(m.role) + "</div><pre>" + escapeHtml(content) + "</pre>";
-        messagesEl.appendChild(div);
-      }
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-
-      const permsEl = document.getElementById("permissions");
-      permsEl.innerHTML = "";
-      for (const req of state.permissions) {
-        const div = document.createElement("div");
-        div.className = "perm";
-        div.innerHTML = "<div><strong>" + escapeHtml(req.tool_name) + "</strong></div>"
-          + "<div class='muted'>" + escapeHtml(req.description || "") + "</div>"
-          + "<div class='muted'>" + escapeHtml(req.path || "") + "</div>";
-        const actions = document.createElement("div");
-        actions.style.marginTop = "8px";
-        actions.style.display = "flex";
-        actions.style.gap = "8px";
-        const allow = document.createElement("button");
-        allow.textContent = "允许";
-        allow.onclick = () => decidePermission(req, true, false);
-        const allowPersist = document.createElement("button");
-        allowPersist.className = "secondary";
-        allowPersist.textContent = "永久允许";
-        allowPersist.onclick = () => decidePermission(req, true, true);
-        const deny = document.createElement("button");
-        deny.className = "danger";
-        deny.textContent = "拒绝";
-        deny.onclick = () => decidePermission(req, false, false);
-        actions.append(allow, allowPersist, deny);
-        div.appendChild(actions);
-        permsEl.appendChild(div);
-      }
-    }
-
-    async function bootstrap() {
-      const rsp = await fetch("/api/bootstrap");
-      const data = await rsp.json();
-      state.sessions = data.sessions || [];
-      state.currentSessionID = data.current_session_id || "";
-      state.messages = data.messages || [];
-      state.permissions = data.permissions || [];
-      state.agent = data.agent || {};
-      render();
-    }
-
-    async function loadMessages() {
-      if (!state.currentSessionID) return;
-      const rsp = await fetch("/api/sessions/" + encodeURIComponent(state.currentSessionID) + "/messages");
-      state.messages = await rsp.json();
-    }
-
-    async function sendMessage() {
-      const promptEl = document.getElementById("prompt");
-      const prompt = promptEl.value.trim();
-      if (!prompt || !state.currentSessionID) return;
-      await fetch("/api/sessions/" + encodeURIComponent(state.currentSessionID) + "/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
-      });
-      promptEl.value = "";
-    }
-
-    async function createSession() {
-      const title = window.prompt("Session 标题", "Untitled Session") || "Untitled Session";
-      const rsp = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title })
-      });
-      const session = await rsp.json();
-      state.sessions.unshift(session);
-      state.currentSessionID = session.id;
-      state.messages = [];
-      render();
-    }
-
-    async function cancelRun() {
-      if (!state.currentSessionID) return;
-      await fetch("/api/sessions/" + encodeURIComponent(state.currentSessionID) + "/cancel", { method: "POST" });
-    }
-
-    async function decidePermission(permission, allow, persistent) {
-      const url = allow ? "/api/permissions/allow" : "/api/permissions/deny";
-      await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ permission, persistent })
-      });
-    }
-
-    function connectEvents() {
-      const es = new EventSource("/api/events");
-      es.onmessage = (ev) => {
-        const data = JSON.parse(ev.data);
-        switch (data.type) {
-          case "message": {
-            upsertById(state.messages, data.payload.payload);
-            break;
-          }
-          case "session": {
-            upsertById(state.sessions, data.payload.payload);
-            state.sessions.sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0));
-            if (!state.currentSessionID) state.currentSessionID = data.payload.payload.id;
-            break;
-          }
-          case "permission_request": {
-            upsertById(state.permissions, data.payload.payload);
-            break;
-          }
-          case "permission_notification": {
-            state.permissions = state.permissions.filter(p => p.tool_call_id !== data.payload.payload.tool_call_id);
-            break;
-          }
-          case "agent_event": {
-            state.agent.is_busy = false;
-            break;
-          }
-        }
-        render();
-      };
-    }
-
-    function escapeHtml(text) {
-      return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
-    }
-
-    document.getElementById("send").onclick = sendMessage;
-    document.getElementById("reload").onclick = async () => { await loadMessages(); render(); };
-    document.getElementById("cancel").onclick = cancelRun;
-    document.getElementById("new-session").onclick = createSession;
-    bootstrap().then(connectEvents);
-  </script>
-</body>
-</html>`
+func (s *Server) staticHandler() http.Handler {
+	sub, err := fs.Sub(frontendgui.Assets, ".")
+	if err != nil {
+		panic(err)
+	}
+	return http.FileServerFS(sub)
+}

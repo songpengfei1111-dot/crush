@@ -1,0 +1,154 @@
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0f1115;
+  color: #e8e8e8;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: 100vh;
+}
+
+.sidebar {
+  border-right: 1px solid #23262d;
+  padding: 12px;
+  overflow: auto;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.main {
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #23262d;
+}
+
+.messages {
+  overflow: auto;
+  padding: 16px;
+}
+
+.composer {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #23262d;
+}
+
+.permissions {
+  border-top: 1px solid #23262d;
+  padding: 12px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.permissions-list {
+  margin-top: 8px;
+}
+
+button {
+  background: #2b6ef3;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #303540;
+}
+
+button.danger {
+  background: #a33939;
+}
+
+textarea,
+input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #151922;
+  color: #eee;
+  border: 1px solid #303540;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.session {
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  background: #151922;
+  border: 1px solid transparent;
+}
+
+.session.active {
+  border-color: #2b6ef3;
+}
+
+.msg {
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #151922;
+}
+
+.msg .role {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.msg pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  font: inherit;
+}
+
+.perm {
+  padding: 10px;
+  background: #151922;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.muted {
+  opacity: 0.7;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.perm-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
