@@ -1,5 +1,46 @@
 {
   "$schema": "https://charm.land/crush.json",
+  "providers": {
+    "deepseek": {
+      "type": "openai-compat",
+      "base_url": "https://api.deepseek.com",
+      "api_key": "sk-4d481d56154746dcbcd6816408c3f9e8",
+      "extra_body": {
+        "thinking": {
+          "type": "enabled"
+        }
+      },
+      "models": [
+        {
+          "id": "deepseek-v4-flash",
+          "name": "DeepSeek V4 flash",
+          "cost_per_1m_in": 0.435,
+          "cost_per_1m_out": 0.87,
+          "cost_per_1m_in_cached": 0.003625,
+          "cost_per_1m_out_cached": 0.87,
+          "context_window": 1000000,
+          "default_max_tokens": 8192,
+          "can_reason": true,
+          "default_reasoning_effort": "high",
+          "supports_attachments": false
+        }
+      ]
+    }
+  },
+  "models": {
+    "large": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "max_tokens": 8192,
+      "reasoning_effort": "high"
+    },
+    "small": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "max_tokens": 8192,
+      "reasoning_effort": "high"
+    }
+  },
   "lsp": {
     "gopls": {
       "options": {
