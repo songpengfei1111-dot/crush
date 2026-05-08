@@ -1,21 +1,19 @@
 import { useEffect, useState } from "react";
 
-import type { BranchMeta, Session } from "../shared/types";
+import type { Session } from "../shared/types";
 
 type SessionsPaneProps = {
   sessions: Session[];
-  branchMetaBySessionID: Record<string, BranchMeta>;
   currentSessionID: string;
   busySessionID: string;
   onCreateSession: () => void;
   onSelectSession: (sessionID: string) => void;
   onRenameSession: (sessionID: string, title: string) => void;
   onDeleteSession: (sessionID: string) => void;
-  onSummarizeSession: (sessionID: string) => void;
 };
 
 type SessionActionIconProps = {
-  kind: "rename" | "summarize" | "delete";
+  kind: "rename" | "delete";
 };
 
 type SessionTreeNode = {
@@ -39,20 +37,6 @@ function SessionActionIcon(props: SessionActionIconProps) {
         />
         <path
           d="M10.4 3.2 12.8 5.6"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
-
-  if (kind === "summarize") {
-    return (
-      <svg viewBox="0 0 16 16" aria-hidden="true">
-        <path
-          d="M3 4.5h10M3 8h7M3 11.5h6"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.4"
@@ -96,14 +80,15 @@ function formatRelativeTime(timestamp: number): string {
 
 function buildSessionTree(
   sessions: Session[],
-  branchMetaBySessionID: Record<string, BranchMeta>,
 ): SessionTreeNode[] {
   const nodeByID = new Map<string, SessionTreeNode>();
+  const nodeIDByPath = new Map<string, string>();
   for (const session of sessions) {
     nodeByID.set(session.id, {
       session,
       children: [],
     });
+    nodeIDByPath.set(normalizeTitlePath(session.title || "Untitled Session"), session.id);
   }
 
   const roots: SessionTreeNode[] = [];
@@ -112,12 +97,15 @@ function buildSessionTree(
     if (!node) {
       continue;
     }
-    const meta = branchMetaBySessionID[session.id];
-    if (!meta || !meta.parentSessionID) {
+    const path = normalizeTitlePath(session.title || "Untitled Session");
+    const segments = path.split("/");
+    if (segments.length <= 1 || !isForkSegment(segments[segments.length - 1])) {
       roots.push(node);
       continue;
     }
-    const parent = nodeByID.get(meta.parentSessionID);
+    const parentPath = segments.slice(0, -1).join("/");
+    const parentID = nodeIDByPath.get(parentPath);
+    const parent = parentID ? nodeByID.get(parentID) : undefined;
     if (!parent) {
       roots.push(node);
       continue;
@@ -131,14 +119,12 @@ function buildSessionTree(
 export function SessionsPane(props: SessionsPaneProps) {
   const {
     sessions,
-    branchMetaBySessionID,
     currentSessionID,
     busySessionID,
     onCreateSession,
     onSelectSession,
     onRenameSession,
     onDeleteSession,
-    onSummarizeSession,
   } = props;
 
   const [editingSessionID, setEditingSessionID] = useState("");
@@ -155,7 +141,7 @@ export function SessionsPane(props: SessionsPaneProps) {
     }
   }, [editingSessionID, sessions]);
 
-  const roots = buildSessionTree(sessions, branchMetaBySessionID);
+  const roots = buildSessionTree(sessions);
 
   return (
     <aside className="sidebar">
@@ -168,7 +154,6 @@ export function SessionsPane(props: SessionsPaneProps) {
             key={node.session.id}
             node={node}
             depth={0}
-            branchMetaBySessionID={branchMetaBySessionID}
             currentSessionID={currentSessionID}
             busySessionID={busySessionID}
             editingSessionID={editingSessionID}
@@ -185,7 +170,6 @@ export function SessionsPane(props: SessionsPaneProps) {
             onSelectSession={onSelectSession}
             onRenameSession={onRenameSession}
             onDeleteSession={onDeleteSession}
-            onSummarizeSession={onSummarizeSession}
           />
         ))}
       </div>
@@ -196,7 +180,6 @@ export function SessionsPane(props: SessionsPaneProps) {
 type SessionTreeItemProps = {
   node: SessionTreeNode;
   depth: number;
-  branchMetaBySessionID: Record<string, BranchMeta>;
   currentSessionID: string;
   busySessionID: string;
   editingSessionID: string;
@@ -207,14 +190,12 @@ type SessionTreeItemProps = {
   onSelectSession: (sessionID: string) => void;
   onRenameSession: (sessionID: string, title: string) => void;
   onDeleteSession: (sessionID: string) => void;
-  onSummarizeSession: (sessionID: string) => void;
 };
 
 function SessionTreeItem(props: SessionTreeItemProps) {
   const {
     node,
     depth,
-    branchMetaBySessionID,
     currentSessionID,
     busySessionID,
     editingSessionID,
@@ -225,16 +206,17 @@ function SessionTreeItem(props: SessionTreeItemProps) {
     onSelectSession,
     onRenameSession,
     onDeleteSession,
-    onSummarizeSession,
   } = props;
   const { session, children } = node;
-  const branchMeta = branchMetaBySessionID[session.id];
-  const sessionKindLabel = branchMeta ? "分支" : session.parent_session_id ? "子会话" : "主会话";
+  const titlePath = normalizeTitlePath(session.title || "Untitled Session");
+  const segments = titlePath.split("/");
+  const isBranchSession = segments.length > 1 && isForkSegment(segments[segments.length - 1]);
+  const sessionKindLabel = isBranchSession ? "分支" : session.parent_session_id ? "子会话" : "主会话";
 
   return (
     <div className={`session-tree depth-${depth}`}>
       <div
-        className={`session${session.id === currentSessionID ? " active" : ""}${branchMeta ? " branch-session" : ""}`}
+        className={`session${session.id === currentSessionID ? " active" : ""}${isBranchSession ? " branch-session" : ""}`}
         style={{ marginLeft: `${depth * 18}px` }}
         onClick={() => onSelectSession(session.id)}
       >
@@ -282,7 +264,7 @@ function SessionTreeItem(props: SessionTreeItemProps) {
             <div className="session-title-row">
               <div className="session-title-main">
                 <div className="session-title">{session.title || "Untitled Session"}</div>
-                {branchMeta ? <span className="session-badge branch">分支</span> : null}
+                {isBranchSession ? <span className="session-badge branch">分支</span> : null}
                 {session.id === busySessionID ? <span className="session-badge running">运行中</span> : null}
               </div>
               <div className="session-title-actions">
@@ -297,18 +279,6 @@ function SessionTreeItem(props: SessionTreeItemProps) {
                   }}
                 >
                   <SessionActionIcon kind="rename" />
-                </button>
-                <button
-                  className="secondary session-icon-button"
-                  type="button"
-                  aria-label="生成摘要"
-                  title="摘要"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void onSummarizeSession(session.id);
-                  }}
-                >
-                  <SessionActionIcon kind="summarize" />
                 </button>
                 <button
                   className="danger session-icon-button"
@@ -336,7 +306,7 @@ function SessionTreeItem(props: SessionTreeItemProps) {
         </div>
         <div className="session-meta muted">
           <span>{session.id.slice(0, 8)}</span>
-          {branchMeta ? <span>fork</span> : null}
+          {isBranchSession ? <span>{segments[segments.length - 1]}</span> : null}
         </div>
       </div>
       {children.length > 0 ? (
@@ -346,7 +316,6 @@ function SessionTreeItem(props: SessionTreeItemProps) {
               key={child.session.id}
               node={child}
               depth={depth + 1}
-              branchMetaBySessionID={branchMetaBySessionID}
               currentSessionID={currentSessionID}
               busySessionID={busySessionID}
               editingSessionID={editingSessionID}
@@ -357,11 +326,25 @@ function SessionTreeItem(props: SessionTreeItemProps) {
               onSelectSession={onSelectSession}
               onRenameSession={onRenameSession}
               onDeleteSession={onDeleteSession}
-              onSummarizeSession={onSummarizeSession}
             />
           ))}
         </div>
       ) : null}
     </div>
   );
+}
+
+function normalizeTitlePath(title: string): string {
+  const parts = title
+    .split("/")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (parts.length === 0) {
+    return "Untitled Session";
+  }
+  return parts.join("/");
+}
+
+function isForkSegment(segment: string): boolean {
+  return /^fork\d*$/i.test(segment);
 }

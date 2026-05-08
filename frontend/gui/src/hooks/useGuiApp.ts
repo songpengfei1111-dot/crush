@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { AppState, BranchMeta, PermissionRequest } from "../shared/types";
+import type { AppState, PermissionRequest } from "../shared/types";
 import {
   allowGuiPermission,
   bootstrapGuiApp,
@@ -180,23 +180,11 @@ export function useGuiApp() {
       const forkedSession = await forkGuiSession(sourceSessionID, roundEndMessageID, title);
       const messages = await loadSessionMessages(forkedSession.id);
       setState((prev) => {
-        const parentMeta = prev.branchMetaBySessionID[sourceSessionID];
-        const branchMeta: BranchMeta = {
-          sessionID: forkedSession.id,
-          parentSessionID: sourceSessionID,
-          roundEndMessageID,
-          rootSessionID: parentMeta?.rootSessionID || sourceSessionID,
-          createdAt: Math.floor(Date.now() / 1000),
-        };
         return {
           ...prev,
           sessions: sortSessions(upsertById(prev.sessions, forkedSession)),
           currentSessionID: forkedSession.id,
           messages,
-          branchMetaBySessionID: {
-            ...prev.branchMetaBySessionID,
-            [forkedSession.id]: branchMeta,
-          },
         };
       });
     },

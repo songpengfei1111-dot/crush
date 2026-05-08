@@ -12,14 +12,12 @@ export default function App() {
     <div className="app">
       <SessionsPane
         sessions={state.sessions}
-        branchMetaBySessionID={state.branchMetaBySessionID}
         currentSessionID={state.currentSessionID}
         busySessionID={state.busySessionID}
         onCreateSession={() => void actions.createNewSession()}
         onSelectSession={(sessionID) => void actions.selectSession(sessionID)}
         onRenameSession={(sessionID, title) => void actions.renameExistingSession(sessionID, title)}
         onDeleteSession={(sessionID) => void actions.deleteExistingSession(sessionID)}
-        onSummarizeSession={(sessionID) => void actions.summarizeSessionByID(sessionID)}
       />
       <main className="main">
         <Toolbar
@@ -36,8 +34,12 @@ export default function App() {
         <Composer
           onSend={actions.sendPrompt}
           onRefresh={actions.refreshMessages}
+          onSummarize={async () => {
+            await actions.summarizeSessionByID(state.currentSessionID)
+          }}
           onCancel={actions.cancelCurrentSession}
           isBusy={state.agent.is_busy}
+          canSummarize={Boolean(state.currentSessionID)}
         />
         <PermissionsPane
           permissions={state.permissions}

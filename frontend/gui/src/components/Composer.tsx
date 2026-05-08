@@ -3,12 +3,14 @@ import { useState } from "react";
 type ComposerProps = {
   onSend: (prompt: string) => Promise<void>;
   onRefresh: () => Promise<void>;
+  onSummarize: () => Promise<void>;
   onCancel: () => Promise<void>;
   isBusy: boolean;
+  canSummarize: boolean;
 };
 
 export function Composer(props: ComposerProps) {
-  const { onSend, onRefresh, onCancel, isBusy } = props;
+  const { onSend, onRefresh, onSummarize, onCancel, isBusy, canSummarize } = props;
   const [prompt, setPrompt] = useState("");
 
   async function handleSend() {
@@ -35,13 +37,22 @@ export function Composer(props: ComposerProps) {
               刷新
             </button>
           </div>
-          <button
-            className={`composer-send-button${isBusy ? " stop" : ""}`}
-            disabled={!isBusy && !prompt.trim()}
-            onClick={() => void (isBusy ? onCancel() : handleSend())}
-          >
-            {isBusy ? "终止" : "发送"}
-          </button>
+          <div className="composer-primary-actions">
+            <button
+              className="secondary composer-secondary-button"
+              disabled={!canSummarize || isBusy}
+              onClick={() => void onSummarize()}
+            >
+              摘要
+            </button>
+            <button
+              className={`composer-send-button${isBusy ? " stop" : ""}`}
+              disabled={!isBusy && !prompt.trim()}
+              onClick={() => void (isBusy ? onCancel() : handleSend())}
+            >
+              {isBusy ? "终止" : "发送"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

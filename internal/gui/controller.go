@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/crush/internal/config"
 	"github.com/charmbracelet/crush/internal/eventpayload"
@@ -159,7 +161,7 @@ func (c *Controller) ForkRound(ctx context.Context, sessionID, roundEndMessageID
 		return proto.Session{}, err
 	}
 	if title == "" {
-		title = forkSessionTitle(sourceSession.Title)
+		title = c.forkSessionTitle(ctx, sourceSession.Title)
 	}
 
 	forkedSession, err := c.ws.CreateSession(ctx, title)
@@ -323,11 +325,76 @@ func isForkRoundEndMessage(msg message.Message) bool {
 	return finish.Reason != message.FinishReasonToolUse
 }
 
-func forkSessionTitle(title string) string {
+func (c *Controller) forkSessionTitle(ctx context.Context, title string) string {
+	parentPath := normalizeSessionTitlePath(title)
+	sessionsList, err := c.ws.ListSessions(ctx)
+	if err != nil {
+		return parentPath + "/fork1"
+	}
+
+	maxForkIndex := 0
+	parentDepth := titlePathDepth(parentPath)
+	for _, sess := range sessionsList {
+		childPath := normalizeSessionTitlePath(sess.Title)
+		if !strings.HasPrefix(childPath, parentPath+"/") {
+			continue
+		}
+		if titlePathDepth(childPath) != parentDepth+1 {
+			continue
+		}
+		segment := lastTitlePathSegment(childPath)
+		if index, ok := parseForkSegment(segment); ok && index > maxForkIndex {
+			maxForkIndex = index
+		}
+	}
+
+	return parentPath + "/fork" + strconv.Itoa(maxForkIndex+1)
+}
+
+func normalizeSessionTitlePath(title string) string {
 	if title == "" {
 		title = defaultSessionTitle
 	}
-	return title + " / fork"
+	parts := strings.Split(title, "/")
+	normalized := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		normalized = append(normalized, trimmed)
+	}
+	if len(normalized) == 0 {
+		return defaultSessionTitle
+	}
+	return strings.Join(normalized, "/")
+}
+
+func titlePathDepth(title string) int {
+	return len(strings.Split(title, "/"))
+}
+
+func lastTitlePathSegment(title string) string {
+	parts := strings.Split(title, "/")
+	if len(parts) == 0 {
+		return ""
+	}
+	return parts[len(parts)-1]
+}
+
+func parseForkSegment(segment string) (int, bool) {
+	if !strings.HasPrefix(strings.ToLower(segment), "fork") {
+		return 0, false
+	}
+	suffix := segment[4:]
+	if suffix == "" {
+		return 1, true
+	}
+	value, err := strconv.Atoi(suffix)
+	if err != nil || value <= 0 {
+		return 0, false
+	}
+	return value, true
 }
 
 func cloneMessageCreateParams(msg message.Message) message.CreateMessageParams {

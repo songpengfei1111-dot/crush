@@ -43,6 +43,12 @@
   gap: 8px;
 }
 
+.composer-primary-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .composer-secondary-button {
   padding: 6px 10px;
   border-radius: 10px;

@@ -28,7 +28,6 @@ export const initialAppState: AppState = {
   permissions: [],
   agent: defaultAgentInfo,
   busySessionID: "",
-  branchMetaBySessionID: {},
 };
 
 export function sortSessions(sessions: Session[]): Session[] {
@@ -88,7 +87,6 @@ export function applyBootstrapResponse(
     permissions: data.permissions || [],
     agent: data.agent || prev.agent,
     busySessionID: data.agent?.is_busy ? data.current_session_id || "" : "",
-    branchMetaBySessionID: prev.branchMetaBySessionID,
   };
 }
 
@@ -127,10 +125,6 @@ export function reduceEvent(
         messages: deletedCurrentSession
           ? prev.messages.filter((message) => message.session_id !== session.id)
           : prev.messages,
-        branchMetaBySessionID:
-          payload.payload.type === "deleted"
-            ? removeByIdFromBranchMeta(prev.branchMetaBySessionID, session.id)
-            : prev.branchMetaBySessionID,
         agent:
           payload.payload.type === "deleted" && session.id === prev.busySessionID
             ? { ...prev.agent, is_busy: false }
@@ -167,13 +161,4 @@ export function reduceEvent(
     default:
       return prev;
   }
-}
-
-function removeByIdFromBranchMeta(
-  branchMetaBySessionID: AppState["branchMetaBySessionID"],
-  sessionID: string,
-): AppState["branchMetaBySessionID"] {
-  const next = { ...branchMetaBySessionID };
-  delete next[sessionID];
-  return next;
 }
