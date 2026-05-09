@@ -457,6 +457,20 @@ func (c *coordinator) buildTools(ctx context.Context, agent config.Agent, isSubA
 		allTools = append(allTools, agenticFetchTool)
 	}
 
+	if slices.Contains(agent.AllowedTools, tools.TraceQueryToolName) {
+		traceBinaryPath := ""
+		if traceOpts := c.cfg.Config().Options.TraceAgent; traceOpts != nil {
+			traceBinaryPath = traceOpts.BinaryPath
+		}
+		allTools = append(allTools, tools.NewTraceQueryTool(
+			c.permissions,
+			c.cfg.WorkingDir(),
+			tools.TraceQueryToolOptions{
+				BinaryPath: traceBinaryPath,
+			},
+		))
+	}
+
 	// Get the model name for the agent
 	modelName := ""
 	if modelCfg, ok := c.cfg.Config().Models[agent.Model]; ok {
