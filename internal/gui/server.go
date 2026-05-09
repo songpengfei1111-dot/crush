@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	frontendgui "github.com/charmbracelet/crush/frontend/gui"
+	"github.com/charmbracelet/crush/internal/config"
 	"github.com/charmbracelet/crush/internal/proto"
 	"github.com/charmbracelet/crush/internal/pubsub"
 )
@@ -39,6 +40,16 @@ func NewServer(controller *Controller) *Server {
 	mux.HandleFunc("POST /api/sessions/{sid}/summarize", s.handleSummarize)
 	mux.HandleFunc("POST /api/permissions/allow", s.handleAllowPermission)
 	mux.HandleFunc("POST /api/permissions/deny", s.handleDenyPermission)
+	mux.HandleFunc("GET /api/settings/bootstrap", s.handleSettingsBootstrap)
+	mux.HandleFunc("POST /api/settings/providers/test", s.handleTestProvider)
+	mux.HandleFunc("PUT /api/settings/providers/{id}", s.handleSaveProvider)
+	mux.HandleFunc("POST /api/settings/models", s.handleUpdatePreferredModel)
+	mux.HandleFunc("POST /api/settings/compact", s.handleSetCompactMode)
+	mux.HandleFunc("PUT /api/settings/mcp/{name}", s.handleSaveMCPServer)
+	mux.HandleFunc("DELETE /api/settings/mcp/{name}", s.handleDeleteMCPServer)
+	mux.HandleFunc("PUT /api/settings/skills", s.handleSaveSkills)
+	mux.HandleFunc("POST /api/settings/providers/{id}/refresh-oauth", s.handleRefreshOAuth)
+	mux.HandleFunc("GET /api/settings/providers/{id}/default-small-model", s.handleDefaultSmallModel)
 	mux.HandleFunc("GET /api/events", s.handleEvents)
 	s.http = &http.Server{Handler: mux}
 	return s
@@ -218,6 +229,138 @@ func (s *Server) handleDenyPermission(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s *Server) handleSettingsBootstrap(w http.ResponseWriter, r *http.Request) {
+	settings, err := s.controller.SettingsBootstrap(r.Context())
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, settings)
+}
+
+func (s *Server) handleTestProvider(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Provider ProviderDraft `json:"provider"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	writeJSON(w, s.controller.TestProvider(r.Context(), req.Provider))
+}
+
+func (s *Server) handleSaveProvider(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Scope    string        `json:"scope"`
+		Provider ProviderDraft `json:"provider"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	req.Provider.ID = firstNonEmpty(req.Provider.ID, r.PathValue("id"))
+	provider, err := s.controller.SaveProvider(r.Context(), configScope(req.Scope), req.Provider)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, provider)
+}
+
+func (s *Server) handleUpdatePreferredModel(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Scope     string               `json:"scope"`
+		ModelType string               `json:"model_type"`
+		Model     config.SelectedModel `json:"model"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if err := s.controller.UpdatePreferredModel(r.Context(), configScope(req.Scope), configSelectedModelType(req.ModelType), req.Model); err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleSetCompactMode(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Scope   string `json:"scope"`
+		Enabled bool   `json:"enabled"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if err := s.controller.SetCompactMode(configScope(req.Scope), req.Enabled); err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleSaveMCPServer(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Scope  string         `json:"scope"`
+		Server MCPServerDraft `json:"server"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	server, err := s.controller.SaveMCPServer(r.Context(), configScope(req.Scope), r.PathValue("name"), req.Server)
+	if err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, server)
+}
+
+func (s *Server) handleDeleteMCPServer(w http.ResponseWriter, r *http.Request) {
+	scope := configScope(r.URL.Query().Get("scope"))
+	if err := s.controller.DeleteMCPServer(r.Context(), scope, r.PathValue("name")); err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleSaveSkills(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Scope  string             `json:"scope"`
+		Skills SkillSettingsDraft `json:"skills"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if err := s.controller.SaveSkillSettings(r.Context(), configScope(req.Scope), req.Skills); err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleRefreshOAuth(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Scope string `json:"scope"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, err, http.StatusBadRequest)
+		return
+	}
+	if err := s.controller.RefreshOAuthToken(r.Context(), configScope(req.Scope), r.PathValue("id")); err != nil {
+		writeError(w, err, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleDefaultSmallModel(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, s.controller.DefaultSmallModel(r.PathValue("id")))
+}
+
 func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	events, err := s.controller.SubscribeEvents(r.Context())
 	if err != nil {
@@ -269,6 +412,24 @@ func writeError(w http.ResponseWriter, err error, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+}
+
+func configScope(scope string) config.Scope {
+	switch scope {
+	case string(config.ScopeWorkspace):
+		return config.ScopeWorkspace
+	default:
+		return config.ScopeGlobal
+	}
+}
+
+func configSelectedModelType(modelType string) config.SelectedModelType {
+	switch modelType {
+	case string(config.SelectedModelTypeSmall):
+		return config.SelectedModelTypeSmall
+	default:
+		return config.SelectedModelTypeLarge
+	}
 }
 
 func (s *Server) staticHandler() http.Handler {

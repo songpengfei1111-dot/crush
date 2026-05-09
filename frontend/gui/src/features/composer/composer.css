@@ -43,6 +43,56 @@
   gap: 8px;
 }
 
+.composer-model-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: min(320px, 34vw);
+  color: rgba(232, 232, 232, 0.86);
+}
+
+.composer-model-select {
+  width: 100%;
+  min-width: 136px;
+  max-width: 320px;
+  padding: 6px 22px 6px 8px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  appearance: none;
+  cursor: pointer;
+}
+
+.composer-model-select:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.composer-model-select:focus-visible {
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.composer-model-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.composer-model-chevron {
+  position: absolute;
+  right: 7px;
+  pointer-events: none;
+  color: rgba(232, 232, 232, 0.58);
+  font-size: 15px;
+  line-height: 1;
+}
+
 .composer-primary-actions {
   display: flex;
   align-items: center;

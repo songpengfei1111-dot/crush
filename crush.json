@@ -4,7 +4,7 @@
     "deepseek": {
       "type": "openai-compat",
       "base_url": "https://api.deepseek.com",
-      "api_key": "sk-4d481d56154746dcbcd6816408c3f9e8",
+      "api_key": "",
       "extra_body": {
         "thinking": {
           "type": "enabled"
@@ -25,6 +25,65 @@
           "supports_attachments": false
         }
       ]
+    },
+    "opencode": {
+      "type": "openai-compat",
+      "base_url": "https://opencode.ai/zen/v1",
+      "api_key": "public",
+      "models": [
+        {
+          "id": "minimax-m2.5-free",
+          "name": "MiniMax M2.5 Free",
+          "cost_per_1m_in": 0,
+          "cost_per_1m_out": 0,
+          "cost_per_1m_in_cached": 0,
+          "cost_per_1m_out_cached": 0,
+          "context_window": 204800,
+          "default_max_tokens": 131072,
+          "can_reason": true,
+          "default_reasoning_effort": "high",
+          "supports_attachments": false
+        },
+        {
+          "id": "big-pickle",
+          "name": "Big Pickle",
+          "cost_per_1m_in": 0,
+          "cost_per_1m_out": 0,
+          "cost_per_1m_in_cached": 0,
+          "cost_per_1m_out_cached": 0,
+          "context_window": 200000,
+          "default_max_tokens": 128000,
+          "can_reason": true,
+          "default_reasoning_effort": "high",
+          "supports_attachments": false
+        },
+        {
+          "id": "hy3-preview-free",
+          "name": "Hy3 preview Free",
+          "cost_per_1m_in": 0,
+          "cost_per_1m_out": 0,
+          "cost_per_1m_in_cached": 0,
+          "cost_per_1m_out_cached": 0,
+          "context_window": 256000,
+          "default_max_tokens": 64000,
+          "can_reason": true,
+          "default_reasoning_effort": "high",
+          "supports_attachments": false
+        },
+        {
+          "id": "nemotron-3-super-free",
+          "name": "Nemotron 3 Super Free",
+          "cost_per_1m_in": 0,
+          "cost_per_1m_out": 0,
+          "cost_per_1m_in_cached": 0,
+          "cost_per_1m_out_cached": 0,
+          "context_window": 204800,
+          "default_max_tokens": 128000,
+          "can_reason": true,
+          "default_reasoning_effort": "high",
+          "supports_attachments": false
+        }
+      ]
     }
   },
   "models": {
@@ -36,7 +95,7 @@
     },
     "small": {
       "provider": "deepseek",
-      "model": "deepseek-v4-pro",
+      "model": "deepseek-v4-flash",
       "max_tokens": 8192,
       "reasoning_effort": "high"
     }

@@ -10,6 +10,7 @@ import type {
   MessagePart,
   PermissionNotification,
   PermissionRequest,
+  SettingsBootstrap,
   Session,
 } from "../shared/types";
 import { removeById, upsertById } from "../utils/collections";
@@ -28,6 +29,19 @@ export const initialAppState: AppState = {
   permissions: [],
   agent: defaultAgentInfo,
   busySessionID: "",
+  settingsOpen: false,
+  settingsLoading: false,
+  providerCatalog: [],
+  configuredProviders: [],
+  selectedModels: {},
+  compactMode: false,
+  mcpServers: [],
+  skills: {
+    user_paths: [],
+    default_paths: [],
+    disabled_skills: [],
+    skills: [],
+  },
 };
 
 export function sortSessions(sessions: Session[]): Session[] {
@@ -59,12 +73,30 @@ function shouldReleaseBusyFromMessage(message: Message, busySessionID: string): 
   return finish.reason !== "tool_use";
 }
 
-function isTerminalAgentEvent(event: AgentEvent, busySessionID: string): boolean {
+function hasCompletedAssistantTurn(messages: Message[], sessionID: string): boolean {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.session_id !== sessionID || message.role !== "assistant") {
+      continue;
+    }
+
+    const finish = getFinishPart(message);
+    return Boolean(finish && finish.reason !== "tool_use");
+  }
+
+  return false;
+}
+
+function isTerminalAgentEvent(event: AgentEvent, busySessionID: string, messages: Message[]): boolean {
   if (!busySessionID) {
     return false;
   }
 
-  return event.session_id === busySessionID;
+  if (event.session_id !== busySessionID || event.type !== "agent_finished") {
+    return false;
+  }
+
+  return hasCompletedAssistantTurn(messages, busySessionID);
 }
 
 function applyResourceEvent<T extends { id: string }>(items: T[], event: EventEnvelope<T>): T[] {
@@ -88,6 +120,28 @@ export function applyBootstrapResponse(
     agent: data.agent || prev.agent,
     busySessionID: data.agent?.is_busy ? data.current_session_id || "" : "",
   };
+}
+
+export function applySettingsBootstrap(prev: AppState, data: SettingsBootstrap): AppState {
+  return {
+    ...prev,
+    providerCatalog: data.provider_catalog || [],
+    configuredProviders: data.configured_providers || [],
+    selectedModels: data.selected_models || {},
+    compactMode: Boolean(data.compact_mode),
+    mcpServers: data.mcp_servers || [],
+		skills: normalizeSkillSettings(data.skills || prev.skills),
+    settingsLoading: false,
+  };
+}
+
+function normalizeSkillSettings(data: AppState["skills"]): AppState["skills"] {
+	return {
+		user_paths: data?.user_paths || [],
+		default_paths: data?.default_paths || [],
+		disabled_skills: data?.disabled_skills || [],
+		skills: data?.skills || [],
+	};
 }
 
 export function reduceEvent(
@@ -151,7 +205,7 @@ export function reduceEvent(
     }
     case "agent_event": {
       const event = payload.payload.payload as AgentEvent;
-      const shouldReleaseBusy = isTerminalAgentEvent(event, prev.busySessionID);
+      const shouldReleaseBusy = isTerminalAgentEvent(event, prev.busySessionID, prev.messages);
       return {
         ...prev,
         agent: shouldReleaseBusy ? { ...prev.agent, is_busy: false } : prev.agent,

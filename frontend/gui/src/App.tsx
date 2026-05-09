@@ -3,10 +3,14 @@ import { MessagesPane } from "./components/MessagesPane";
 import { PermissionsPane } from "./components/PermissionsPane";
 import { SessionsPane } from "./components/SessionsPane";
 import { Toolbar } from "./components/Toolbar";
+import { SettingsPage } from "./features/settings/SettingsPage";
 import { useGuiApp } from "./hooks/useGuiApp";
 
 export default function App() {
   const { state, currentSession, currentMessages, actions } = useGuiApp();
+  const selectedLargeModel = state.selectedModels.large;
+  const configuredProviders = state.configuredProviders.filter((provider) => !provider.disabled);
+  const modelLabel = selectedLargeModel ? `${selectedLargeModel.provider}/${selectedLargeModel.model}` : undefined;
 
   return (
     <div className="app">
@@ -23,6 +27,8 @@ export default function App() {
         <Toolbar
           title={currentSession ? currentSession.title : "Crush GUI"}
           isBusy={state.agent.is_busy}
+          modelLabel={modelLabel}
+          onOpenSettings={() => void actions.openSettings()}
         />
         <MessagesPane
           messages={currentMessages}
@@ -40,11 +46,33 @@ export default function App() {
           onCancel={actions.cancelCurrentSession}
           isBusy={state.agent.is_busy}
           canSummarize={Boolean(state.currentSessionID)}
+          providers={configuredProviders}
+          selectedModel={selectedLargeModel}
         />
         <PermissionsPane
           permissions={state.permissions}
           onAllow={actions.allowCurrentPermission}
           onDeny={actions.denyCurrentPermission}
+        />
+        <SettingsPage
+          open={state.settingsOpen}
+          loading={state.settingsLoading}
+          providerCatalog={state.providerCatalog}
+          configuredProviders={state.configuredProviders}
+          mcpServers={state.mcpServers}
+          skills={state.skills}
+          selectedModel={selectedLargeModel}
+          compactMode={state.compactMode}
+          onClose={actions.closeSettings}
+          onRefresh={actions.refreshSettings}
+          onSaveProvider={actions.saveProviderDraft}
+          onTestProvider={actions.testProviderDraft}
+          onSelectModel={actions.updatePreferredModelSelection}
+          onSetCompactMode={actions.setCompactMode}
+          onRefreshOAuth={actions.refreshOAuthForProvider}
+          onSaveMCPServer={actions.saveMCPServerDraft}
+          onDeleteMCPServer={actions.deleteMCPServerByName}
+          onSaveSkills={actions.saveSkillsSettings}
         />
       </main>
     </div>

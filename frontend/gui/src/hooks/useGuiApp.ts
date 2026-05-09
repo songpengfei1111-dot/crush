@@ -1,22 +1,42 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { AppState, PermissionRequest } from "../shared/types";
+import type {
+  AppState,
+  ConfigScope,
+  MCPServerDraft,
+  PermissionRequest,
+  ProviderDraft,
+  SelectedModelConfig,
+  SendPromptOptions,
+  SkillSettingsDraft,
+} from "../shared/types";
 import {
   allowGuiPermission,
   bootstrapGuiApp,
+  bootstrapGuiSettings,
   cancelGuiSession,
   createGuiSession,
+  deleteGuiMCPServer,
   deleteGuiSession,
   denyGuiPermission,
   forkGuiSession,
+  loadDefaultSmallModel,
   loadSessionMessages,
+  refreshGuiProviderOAuth,
   revokeGuiRound,
   renameGuiSession,
+  saveGuiMCPServer,
+  saveGuiProvider,
+  saveGuiSkillSettings,
+  setGuiCompactMode,
   subscribeGuiEvents,
   submitPrompt,
   summarizeGuiSession,
+  testGuiProvider,
+  updateGuiPreferredModel,
 } from "../state/guiAppEffects";
 import {
+  applySettingsBootstrap,
   applyBootstrapResponse,
   initialAppState,
   isMutationType,
@@ -32,8 +52,9 @@ export function useGuiApp() {
     let stream: EventSource | undefined;
 
     async function bootstrap() {
-      const data = await bootstrapGuiApp();
+      const [data, settings] = await Promise.all([bootstrapGuiApp(), bootstrapGuiSettings()]);
       setState((prev) => applyBootstrapResponse(prev, data));
+      setState((prev) => applySettingsBootstrap(prev, settings));
 
       stream = subscribeGuiEvents((payload) => {
         if (!isMutationType(payload.payload.type)) {
@@ -78,11 +99,31 @@ export function useGuiApp() {
   }, [state.currentSessionID]);
 
   const sendPrompt = useCallback(
-    async (prompt: string) => {
+    async (prompt: string, options?: SendPromptOptions) => {
       if (!prompt || !state.currentSessionID) {
         return;
       }
       const sessionID = state.currentSessionID;
+      if (options?.modelOverride) {
+        const scope = options.scope || "workspace";
+        await updateGuiPreferredModel(scope, "large", options.modelOverride);
+        let syncedSmallModel: SelectedModelConfig | undefined;
+        if (options.syncSmallModel !== false) {
+          const smallModel = await loadDefaultSmallModel(options.modelOverride.provider);
+          if (smallModel.model && smallModel.provider) {
+            await updateGuiPreferredModel(scope, "small", smallModel);
+            syncedSmallModel = smallModel;
+          }
+        }
+        setState((prev) => ({
+          ...prev,
+          selectedModels: {
+            ...prev.selectedModels,
+            large: options.modelOverride,
+            ...(syncedSmallModel ? { small: syncedSmallModel } : {}),
+          },
+        }));
+      }
       setState((prev) => ({
         ...prev,
         agent: { ...prev.agent, is_busy: true },
@@ -191,6 +232,77 @@ export function useGuiApp() {
     [state.currentSessionID],
   );
 
+  const openSettings = useCallback(async () => {
+    setState((prev) => ({ ...prev, settingsOpen: true, settingsLoading: true }));
+    const settings = await bootstrapGuiSettings();
+    setState((prev) => applySettingsBootstrap(prev, settings));
+  }, []);
+
+  const closeSettings = useCallback(() => {
+    setState((prev) => ({ ...prev, settingsOpen: false }));
+  }, []);
+
+  const refreshSettings = useCallback(async () => {
+    setState((prev) => ({ ...prev, settingsLoading: true }));
+    const settings = await bootstrapGuiSettings();
+    setState((prev) => applySettingsBootstrap(prev, settings));
+  }, []);
+
+  const saveProviderDraft = useCallback(async (provider: ProviderDraft, scope: ConfigScope = "global") => {
+    await saveGuiProvider(scope, provider);
+    const settings = await bootstrapGuiSettings();
+    setState((prev) => applySettingsBootstrap(prev, settings));
+  }, []);
+
+  const testProviderDraft = useCallback((provider: ProviderDraft) => {
+    return testGuiProvider(provider);
+  }, []);
+
+  const updatePreferredModelSelection = useCallback(
+    async (model: SelectedModelConfig, scope: ConfigScope = "global", syncSmallModel = true) => {
+      await updateGuiPreferredModel(scope, "large", model);
+      const nextSelectedModels = { ...state.selectedModels, large: model };
+      if (syncSmallModel) {
+        const smallModel = await loadDefaultSmallModel(model.provider);
+        if (smallModel.model && smallModel.provider) {
+          await updateGuiPreferredModel(scope, "small", smallModel);
+          nextSelectedModels.small = smallModel;
+        }
+      }
+      setState((prev) => ({ ...prev, selectedModels: nextSelectedModels }));
+    },
+    [state.selectedModels],
+  );
+
+  const setCompactMode = useCallback(async (enabled: boolean, scope: ConfigScope = "global") => {
+    await setGuiCompactMode(scope, enabled);
+    setState((prev) => ({ ...prev, compactMode: enabled }));
+  }, []);
+
+  const refreshOAuthForProvider = useCallback(async (providerID: string, scope: ConfigScope = "global") => {
+    await refreshGuiProviderOAuth(scope, providerID);
+    const settings = await bootstrapGuiSettings();
+    setState((prev) => applySettingsBootstrap(prev, settings));
+  }, []);
+
+  const saveMCPServerDraft = useCallback(async (server: MCPServerDraft, scope: ConfigScope = "global") => {
+    await saveGuiMCPServer(scope, server);
+    const settings = await bootstrapGuiSettings();
+    setState((prev) => applySettingsBootstrap(prev, settings));
+  }, []);
+
+  const deleteMCPServerByName = useCallback(async (name: string, scope: ConfigScope = "global") => {
+    await deleteGuiMCPServer(name, scope);
+    const settings = await bootstrapGuiSettings();
+    setState((prev) => applySettingsBootstrap(prev, settings));
+  }, []);
+
+  const saveSkillsSettings = useCallback(async (skills: SkillSettingsDraft, scope: ConfigScope = "global") => {
+    await saveGuiSkillSettings(scope, skills);
+    const settings = await bootstrapGuiSettings();
+    setState((prev) => applySettingsBootstrap(prev, settings));
+  }, []);
+
   return {
     state,
     currentSession,
@@ -209,6 +321,17 @@ export function useGuiApp() {
       allowCurrentPermission,
       denyCurrentPermission,
       revokeRoundByMessageID,
+      openSettings,
+      closeSettings,
+      refreshSettings,
+      saveProviderDraft,
+      testProviderDraft,
+      updatePreferredModelSelection,
+      setCompactMode,
+      refreshOAuthForProvider,
+      saveMCPServerDraft,
+      deleteMCPServerByName,
+      saveSkillsSettings,
     },
   };
 }

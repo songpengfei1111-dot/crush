@@ -3,23 +3,43 @@ import {
   cancelSession,
   createSession,
   deleteSession,
+  deleteMCPServer,
   denyPermission,
   forkSession,
   getBootstrap,
+  getDefaultSmallModel,
   getMessages,
+  getSettingsBootstrap,
   openEventStream,
   postMessage,
+  refreshProviderOAuth,
   revokeRound,
+  saveMCPServer,
   renameSession,
+  saveProvider,
+  saveSkillSettings,
+  setCompactMode,
   summarizeSession,
+  testProvider,
+  updatePreferredModel,
 } from "../api/gui";
 import type {
   AgentEvent,
   BootstrapResponse,
+  ConfigScope,
   EventEnvelope,
+  MCPServerDraft,
+  MCPServerSummary,
   Message,
   PermissionNotification,
   PermissionRequest,
+  ProviderDraft,
+  ProviderSummary,
+  ProviderTestResult,
+  SelectedModelConfig,
+  SelectedModelType,
+  SkillSettingsDraft,
+  SettingsBootstrap,
   Session,
 } from "../shared/types";
 
@@ -84,4 +104,48 @@ export function allowGuiPermission(permission: PermissionRequest, persistent: bo
 
 export function denyGuiPermission(permission: PermissionRequest): Promise<void> {
   return denyPermission(permission);
+}
+
+export function bootstrapGuiSettings(): Promise<SettingsBootstrap> {
+  return getSettingsBootstrap();
+}
+
+export function saveGuiProvider(scope: ConfigScope, provider: ProviderDraft): Promise<ProviderSummary> {
+  return saveProvider(scope, provider);
+}
+
+export function testGuiProvider(provider: ProviderDraft): Promise<ProviderTestResult> {
+  return testProvider(provider);
+}
+
+export function updateGuiPreferredModel(
+  scope: ConfigScope,
+  modelType: SelectedModelType,
+  model: SelectedModelConfig,
+): Promise<void> {
+  return updatePreferredModel(scope, modelType, model);
+}
+
+export function setGuiCompactMode(scope: ConfigScope, enabled: boolean): Promise<void> {
+  return setCompactMode(scope, enabled);
+}
+
+export function saveGuiMCPServer(scope: ConfigScope, server: MCPServerDraft): Promise<MCPServerSummary> {
+  return saveMCPServer(scope, server);
+}
+
+export function deleteGuiMCPServer(name: string, scope: ConfigScope): Promise<void> {
+  return deleteMCPServer(name, scope);
+}
+
+export function saveGuiSkillSettings(scope: ConfigScope, skills: SkillSettingsDraft): Promise<void> {
+  return saveSkillSettings(scope, skills);
+}
+
+export function refreshGuiProviderOAuth(scope: ConfigScope, providerID: string): Promise<void> {
+  return refreshProviderOAuth(scope, providerID);
+}
+
+export function loadDefaultSmallModel(providerID: string): Promise<SelectedModelConfig> {
+  return getDefaultSmallModel(providerID);
 }
